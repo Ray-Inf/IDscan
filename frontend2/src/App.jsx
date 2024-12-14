@@ -3,38 +3,45 @@ import { BrowserRouter as Router, Routes, Route, Link } from 'react-router-dom';
 import Home from './components/Home';
 import Register from './components/Register';
 import Login from './components/Login';
+import './index.css';
 
 export default function App() {
   return (
     <Router>
-      <div className="container">
-        <nav className="navbar navbar-expand-lg navbar-light bg-light">
-          <div className="collapse navbar-collapse" id="navbarSupportedContent">
-            <ul className="navbar-nav">
-              <li className="nav-item">
-                <Link to="/" className="nav-link">
-                  <b>Home</b>
+      <div className="min-h-screen bg-gray-50 font-sans flex flex-col">
+        <nav className="bg-indigo-600 p-4 shadow-lg">
+          <div className="max-w-7xl mx-auto">
+            <ul className="flex space-x-6">
+              <li className="text-white hover:text-indigo-200">
+                <Link to="/" className="text-lg font-semibold">
+                  Home
                 </Link>
               </li>
-              <li className="nav-item">
-                <Link to="/register" className="nav-link">
-                  <b>Register</b>
+              <li className="text-white hover:text-indigo-200">
+                <Link to="/register" className="text-lg font-semibold">
+                  Register
                 </Link>
               </li>
-              <li className="nav-item">
-                <Link to="/login" className="nav-link">
-                  <b>Login</b>
+              <li className="text-white hover:text-indigo-200">
+                <Link to="/login" className="text-lg font-semibold">
+                  Login
                 </Link>
               </li>
             </ul>
           </div>
         </nav>
-        <br />
-        <Routes>
-          <Route path="/" element={<Home />} />
-          <Route path="/register" element={<Register />} />
-          <Route path="/login" element={<Login />} />
-        </Routes>
+        <div className="flex-grow">
+          <Routes>
+            <Route path="/" element={<Home />} />
+            <Route path="/register" element={<Register />} />
+            <Route path="/login" element={<Login />} />
+          </Routes>
+        </div>
+        <footer className="bg-gray-800 text-white py-4 mt-8">
+          <div className="max-w-7xl mx-auto text-center">
+            <p>&copy; 2024 IDScanner. All rights reserved.</p>
+          </div>
+        </footer>
       </div>
     </Router>
   );
