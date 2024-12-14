@@ -13,37 +13,54 @@ const Register = () => {
     };
 
     return (
-        <>
-            {resultStatus !== "Done" ? (
-                <>
-                    <div className="form-group">
-                        <label>Enter your name</label>
-                        <input
-                            type="text"
-                            name="name"
-                            className="form-control"
-                            onChange={(e) => setName(e.target.value)}
-                        />
+        <div className="min-h-screen bg-gray-100 flex items-center justify-center p-6">
+            <div className="max-w-md w-full bg-white p-8 rounded-lg shadow-xl">
+                {resultStatus !== "Done" ? (
+                    <div>
+                        <h2 className="text-3xl font-semibold text-center text-indigo-600 mb-6">
+                            Register Your Account
+                        </h2>
+                        <div className="mb-4">
+                            <label htmlFor="name" className="block text-gray-700 text-sm font-medium mb-2">
+                                Enter Your Name
+                            </label>
+                            <input
+                                type="text"
+                                name="name"
+                                id="name"
+                                className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                                onChange={(e) => setName(e.target.value)}
+                            />
+                        </div>
+                        <div className="text-center">
+                            <button
+                                onClick={register}
+                                className="w-full py-2 px-4 bg-indigo-600 text-white font-semibold rounded-lg hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                            >
+                                Take My Picture
+                            </button>
+                        </div>
                     </div>
-                    <div className="form-group">
-                        <input
-                            type="submit"
-                            value="Take My Picture"
-                            onClick={register}
-                            className="btn btn-primary"
-                        />
+                ) : (
+                    <div className="text-center">
+                        <h2 className="text-2xl font-semibold text-indigo-600 mb-4">
+                            Hello {name}!
+                        </h2>
+                        <p className="text-gray-700 mb-4">
+                            Your registration was successfully completed. You can now proceed to login.
+                        </p>
+                        <div>
+                            <button
+                                onClick={() => setResultStatus(null)}
+                                className="w-full py-2 px-4 bg-indigo-600 text-white font-semibold rounded-lg hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                            >
+                                Back to Register
+                            </button>
+                        </div>
                     </div>
-                </>
-            ) : (
-                <div>
-                    <div className="details">
-                        Hello {name}!
-                        <br />
-                        Your registration is successfully completed. Now you may proceed to login.
-                    </div>
-                </div>
-            )}
-        </>
+                )}
+            </div>
+        </div>
     );
 };
 
