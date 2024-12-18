@@ -74,6 +74,7 @@ def register():
 @app.route('/login', methods=['POST'])
 def login():
     # Initialize SimpleFacerec and load known face encodings
+    print(1)
     sfr = SimpleFacerec()
     sfr.load_encoding_images("OpenCV/images")  # Path to images for encoding
 
