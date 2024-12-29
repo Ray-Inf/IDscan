@@ -15,7 +15,7 @@ export default function App() {
             <ul className="flex space-x-6">
               <li className="text-white hover:text-indigo-200">
                 <Link to="/" className="text-lg font-semibold">
-                  Home
+                  Login
                 </Link>
               </li>
               <li className="text-white hover:text-indigo-200">
@@ -23,11 +23,11 @@ export default function App() {
                   Register
                 </Link>
               </li>
-              <li className="text-white hover:text-indigo-200">
+              {/* <li className="text-white hover:text-indigo-200">
                 <Link to="/login" className="text-lg font-semibold">
                   Login
                 </Link>
-              </li>
+              </li> */}
               <li className="text-white hover:text-indigo-200">
                 <Link to="/idScan" className="text-lg font-semibold">
                   IDScan
@@ -38,9 +38,8 @@ export default function App() {
         </nav>
         <div className="flex-grow">
           <Routes>
-            <Route path="/" element={<Home />} />
+            <Route path="/" element={<Login />} />
             <Route path="/register" element={<Register />} />
-            <Route path="/login" element={<Login />} />
             <Route path="/idScan" element={<IDScan/>}/>
           </Routes>
         </div>
