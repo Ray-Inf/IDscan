@@ -4,6 +4,7 @@ import Home from './components/Home';
 import Register from './components/Register';
 import Login from './components/Login';
 import './index.css';
+import IDScan from './components/IDScan';
 
 export default function App() {
   return (
@@ -27,6 +28,11 @@ export default function App() {
                   Login
                 </Link>
               </li>
+              <li className="text-white hover:text-indigo-200">
+                <Link to="/idScan" className="text-lg font-semibold">
+                  IDScan
+                </Link>
+              </li>
             </ul>
           </div>
         </nav>
@@ -35,6 +41,7 @@ export default function App() {
             <Route path="/" element={<Home />} />
             <Route path="/register" element={<Register />} />
             <Route path="/login" element={<Login />} />
+            <Route path="/idScan" element={<IDScan/>}/>
           </Routes>
         </div>
         <footer className="bg-gray-800 text-white py-4 mt-8">

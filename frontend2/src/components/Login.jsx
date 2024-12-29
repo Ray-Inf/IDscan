@@ -1,5 +1,6 @@
 import React, { useState } from "react";
 import WebCam from "./WebCam"; // Reuse the WebCam component
+import { Link } from "react-router-dom";
 
 const Login = () => {
   const [name, setName] = useState(null);
