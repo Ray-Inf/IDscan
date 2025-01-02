@@ -3,7 +3,7 @@ import 'dart:io';
 import 'package:http/http.dart' as http;
 
 class ApiService {
-  static const String _baseUrl = "http://192.168.1.5:5000";
+  static const String _baseUrl =;
 
   static Future<Map<String, dynamic>> registerUser(String name, File image) async {
     final uri = Uri.parse("$_baseUrl/register");
