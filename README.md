@@ -3,7 +3,7 @@
 ## In the api_service.dart file you need to give the ipv4 and correct teh line in the formate
   ## static const String _baseUrl = "http://ipv4:5000";
   ## to know your ipv4 in windows go the command line and type ipconfig and you will get the ipv4 address
-## Running the App on Your Device or Emulator
+## Running the App on Your Device or Emulator 
 
 To see the preview of the app and test it, you can either use a physical Android phone or an emulator that comes with Android Studio.
 
