@@ -83,6 +83,7 @@ function IDScan() {
           setMatchFound(data.matchFound); // Set match status
           if (data.matchFound) {
             setMatchedName(data.matchedName); // Set matched name
+            stopCapture(); // Stop video capture when a face match is found
           }
         }
       })
@@ -104,10 +105,14 @@ function IDScan() {
 
   return (
     <div>
-      {/* Video element for live feed */}
-      <video ref={videoRef} width="640" height="480" />
+      {/* Video element for live feed, hidden when a match is found */}
+      {!matchFound && (
+        <video ref={videoRef} width="640" height="480" />
+      )}
       {/* Canvas element to capture frames from the video, hidden from view */}
-      <canvas ref={canvasRef} width="640" height="480" style={{ display: 'none' }} />
+      {!matchFound && (
+        <canvas ref={canvasRef} width="640" height="480" style={{ display: 'none' }} />
+      )}
 
       <div>
         {/* Display detected face if available */}
@@ -125,13 +130,16 @@ function IDScan() {
 
       <div>
         {/* Button to start or stop capturing based on current state */}
-        {!isCapturing ? (
+        {!isCapturing && !matchFound ? (
           <button className='m-2 p-5 bg-indigo-600 text-white rounded-md' onClick={startCapture}>Start Capturing</button>
-        ) : (
+        ) : isCapturing && !matchFound ? (
           <button className='m-2 p-5 bg-indigo-600 text-white rounded-md' onClick={stopCapture}>Stop Capturing</button>
-        )}
+        ) : null}
+
         {/* Button to capture and process the current frame */}
-        <button className='m-2 p-5 bg-indigo-600 text-white rounded-md' onClick={captureFrame}>Extract</button>
+        {!matchFound && (
+          <button className='m-2 p-5 bg-indigo-600 text-white rounded-md' onClick={captureFrame}>Extract</button>
+        )}
         {/* Button to reset all states and stop capturing */}
         <button className='m-2 p-5 bg-indigo-600 text-white rounded-md' onClick={resetCapture}>Reset</button>
       </div>
