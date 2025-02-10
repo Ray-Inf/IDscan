@@ -4,6 +4,8 @@ import Register from './components/Register';
 import Login from './components/Login';
 import './index.css';
 import IDScan from './components/IDScan';
+import DatabaseTest from './components/DatabaseTest'; // Importing DatabaseTest component
+
 
 export default function App() {
   return (
@@ -22,14 +24,14 @@ export default function App() {
                   Register
                 </Link>
               </li>
-              {/* <li className="text-white hover:text-indigo-200">
-                <Link to="/login" className="text-lg font-semibold">
-                  Login
-                </Link>
-              </li> */}
               <li className="text-white hover:text-indigo-200">
                 <Link to="/idScan" className="text-lg font-semibold">
                   IDScan
+                </Link>
+              </li>
+              <li className="text-white hover:text-indigo-200">
+                <Link to="/databaseTest" className="text-lg font-semibold">
+                  Database Test
                 </Link>
               </li>
             </ul>
@@ -40,6 +42,7 @@ export default function App() {
             <Route path="/" element={<Login />} />
             <Route path="/register" element={<Register />} />
             <Route path="/idScan" element={<IDScan/>}/>
+            <Route path="/databaseTest" element={<DatabaseTest />} /> {/* Route for DatabaseTest */}
           </Routes>
         </div>
         <footer className="bg-gray-800 text-white py-4 mt-8">
