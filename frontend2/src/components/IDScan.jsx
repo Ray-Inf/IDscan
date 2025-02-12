@@ -8,7 +8,12 @@ function IDScan() {
   const [matchedName, setMatchedName] = useState(''); // Stores the name if a match is found
   const [error, setError] = useState(''); // State to store any errors
   const [isCapturing, setIsCapturing] = useState(false); // State to control capturing
-  
+  const [studentId, setStudentId] = useState('');
+  const [confirmingId, setConfirmingId] = useState(false);
+  const [manualIdEntry, setManualIdEntry] = useState(false);
+  const [correctedId, setCorrectedId] = useState('');
+
+
   // Refs for video, canvas, interval, and stream
   const videoRef = useRef(null);    // Reference to the video element
   const canvasRef = useRef(null);   // Reference to the canvas element
@@ -75,7 +80,12 @@ function IDScan() {
           setError(data.error); // Display any error message
         } else {
           if (data.extractedText) {
-            setExtractedText(data.extractedText); // Update extracted text
+            setExtractedText(data.extractedText);
+            const idMatch = data.extractedText.match(/Student Id: (\d{8})/i);
+            if (idMatch) {
+              setStudentId(idMatch[1]);
+              setConfirmingId(true);
+            }
           }
           if (data.detectedFace) {
             setDetectedFace(data.detectedFace);   // Update detected face image
@@ -94,53 +104,79 @@ function IDScan() {
   };
 
   const resetCapture = () => {
-    // Reset all state variables and stop capturing
     setExtractedText('');
     setDetectedFace('');
     setMatchFound(null);
     setMatchedName('');
     setError('');
+    setStudentId('');
+    setConfirmingId(false);
+    setManualIdEntry(false);
+    setCorrectedId('');
     stopCapture();
+  };
+
+  const handleConfirmation = (isCorrect) => {
+    setConfirmingId(false);
+    if (!isCorrect) {
+      setManualIdEntry(true);
+    }
+  };
+
+  const saveCorrectedId = () => {
+    setStudentId(correctedId);
+    setManualIdEntry(false);
   };
 
   return (
     <div>
-      {/* Video element for live feed, hidden when a match is found */}
       {!matchFound && (
         <video ref={videoRef} width="640" height="480" />
       )}
-      {/* Canvas element to capture frames from the video, hidden from view */}
       {!matchFound && (
         <canvas ref={canvasRef} width="640" height="480" style={{ display: 'none' }} />
       )}
 
       <div>
-        {/* Display detected face if available */}
         {detectedFace && <img src={detectedFace} alt="Detected Face" />}
-        {/* Display match status if determined */}
         {matchFound !== null && (
-          <p>
-            {matchFound ? `Match found: ${matchedName}` : 'No matching face detected.'}
-          </p>
+          <p>{matchFound ? `Match found: ${matchedName}` : 'No matching face detected.'}</p>
         )}
-        {/* Display extracted text from ID card */}
         {extractedText && <p>{extractedText}</p>}
         {error && <p style={{ color: 'red' }}>{error}</p>}
+
+        {confirmingId && (
+          <div>
+            <p>Is this the correct Student ID: {studentId}?</p>
+            <button className='m-2 p-2 bg-green-500 text-white rounded' onClick={() => handleConfirmation(true)}>Yes</button>
+            <button className='m-2 p-2 bg-red-500 text-white rounded' onClick={() => handleConfirmation(false)}>No</button>
+          </div>
+        )}
+
+        {manualIdEntry && (
+          <div>
+            <input
+              type="text"
+              value={correctedId}
+              onChange={(e) => setCorrectedId(e.target.value)}
+              placeholder="Enter correct Student ID"
+              className="m-2 p-2 border rounded"
+            />
+            <button className='m-2 p-2 bg-blue-500 text-white rounded' onClick={saveCorrectedId}>Save</button>
+          </div>
+        )}
       </div>
 
       <div>
-        {/* Button to start or stop capturing based on current state */}
         {!isCapturing && !matchFound ? (
           <button className='m-2 p-5 bg-indigo-600 text-white rounded-md' onClick={startCapture}>Start Capturing</button>
         ) : isCapturing && !matchFound ? (
           <button className='m-2 p-5 bg-indigo-600 text-white rounded-md' onClick={stopCapture}>Stop Capturing</button>
         ) : null}
 
-        {/* Button to capture and process the current frame */}
         {!matchFound && (
           <button className='m-2 p-5 bg-indigo-600 text-white rounded-md' onClick={captureFrame}>Extract</button>
         )}
-        {/* Button to reset all states and stop capturing */}
         <button className='m-2 p-5 bg-indigo-600 text-white rounded-md' onClick={resetCapture}>Reset</button>
       </div>
     </div>
