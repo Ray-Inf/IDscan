@@ -1,4 +1,5 @@
 import React, { useState, useRef, useEffect } from 'react';
+import { useNavigate } from 'react-router-dom'; // Import useNavigate to automatically navigate the user to face scan after ID card scan
 
 function IDScan() {
   // State variables to store extracted text, detected face, match status, matched name, errors, and capture status
@@ -13,6 +14,7 @@ function IDScan() {
   const [manualIdEntry, setManualIdEntry] = useState(false);
   const [correctedId, setCorrectedId] = useState('');
 
+  const navigate = useNavigate(); // Initialize useNavigate
 
   // Refs for video, canvas, interval, and stream
   const videoRef = useRef(null);    // Reference to the video element
@@ -120,13 +122,17 @@ function IDScan() {
     setConfirmingId(false);
     if (!isCorrect) {
       setManualIdEntry(true);
+    } else {
+      navigate("/"); // Redirect to Login page
     }
   };
 
   const saveCorrectedId = () => {
     setStudentId(correctedId);
     setManualIdEntry(false);
+    navigate("/"); // Redirect to Login page after saving the ID
   };
+
 
   return (
     <div>
@@ -140,7 +146,7 @@ function IDScan() {
       <div>
         {detectedFace && <img src={detectedFace} alt="Detected Face" />}
         {matchFound !== null && (
-          <p>{matchFound ? `Match found: ${matchedName}` : 'No matching face detected.'}</p>
+          <p>{matchFound ? 'Match found: ${matchedName}' : 'No matching face detected.'}</p>
         )}
         {extractedText && <p>{extractedText}</p>}
         {error && <p style={{ color: 'red' }}>{error}</p>}

@@ -39,15 +39,15 @@ const Login = () => {
       method: "POST",
       body: formData,
     })
-      .then((res) => res.text())
-      .then((res) => {
-        if (res.includes("Error")) {
+      .then((res) => res.json())
+      .then((data) => {
+        if (data.error) {
           // If the response includes 'Error', show the error message
           setErrorMessage(res);
           setLoggedIn(false);
         } else {
           // If login is successful
-          setName(res);
+          setName(data.message);
           setLoggedIn(true);
           setErrorMessage(null); // Clear any previous error messages
         }
@@ -112,7 +112,7 @@ const Login = () => {
         ) : (
           <div className="text-center">
             <h2 className="text-2xl font-semibold text-indigo-600 mb-4">
-              Hello {name}!
+              {name}
             </h2>
             <p className="text-gray-700 mb-4">
               You are successfully logged in to the system. You may logout of

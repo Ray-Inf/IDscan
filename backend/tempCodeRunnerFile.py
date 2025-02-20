@@ -223,6 +223,38 @@ def login_face():
     logged_in_user = face_names[0]
     return jsonify({"message": f"Welcome, {logged_in_user}!"})
 
+
+# @app.route('/verify-id-card', methods=['POST'])
+# def verify_id_card():
+#     file = request.files.get('file')
+#     if not file:
+#         return jsonify({"error": "File is required!"}), 400
+    
+#     file_path = f"temp/{file.filename}"
+#     file.save(file_path)
+    
+#     # Preprocess and extract features from the scanned ID card
+#     img = cv2.imread(file_path)
+#     processed_img = preprocess_image(img)
+#     query_features = extract_features(processed_img).flatten()  # Implement this function based on your feature extraction logic
+    
+#     os.remove(file_path)
+    
+#     # Compare with stored templates
+#     best_match = None
+#     highest_similarity = -1
+#     for template_name, template_feature in template_features.items():
+#         similarity = cosine_similarity([query_features], [template_feature])[0][0]
+#         if similarity > highest_similarity:
+#             highest_similarity = similarity
+#             best_match = template_name
+    
+#     if highest_similarity > 0.8:  # Threshold for similarity
+#         return jsonify({"message": f"Matched with template '{best_match}'", "similarity": float(highest_similarity)})
+#     else:
+#         return jsonify({"message": "No match found", "similarity": float(highest_similarity)}), 404
+
+
 # Placeholder for feature extraction logic
 def extract_features(image):
     # Replace this with your actual feature extraction logic (e.g., using a pretrained model)

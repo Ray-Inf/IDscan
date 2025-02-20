@@ -4,6 +4,7 @@ import Register from './components/Register';
 import Login from './components/Login';
 import './index.css';
 import IDScan from './components/IDScan';
+import IDVERIFY from './components/IDVERIFY';
 import DatabaseTest from './components/DatabaseTest'; // Importing DatabaseTest component
 
 
@@ -34,6 +35,11 @@ export default function App() {
                   Database Test
                 </Link>
               </li>
+              <li className="text-white hover:text-indigo-200">
+                <Link to="/IDVERIFY" className="text-lg font-semibold">
+                  IDVERIFY
+                </Link>
+              </li>
             </ul>
           </div>
         </nav>
@@ -43,6 +49,7 @@ export default function App() {
             <Route path="/register" element={<Register />} />
             <Route path="/idScan" element={<IDScan/>}/>
             <Route path="/databaseTest" element={<DatabaseTest />} /> {/* Route for DatabaseTest */}
+            <Route path="/IDVERIFY" element={<IDVERIFY/>} />
           </Routes>
         </div>
         <footer className="bg-gray-800 text-white py-4 mt-8">
