@@ -22,12 +22,15 @@ db.connect(err => {
 });
 
 // API Endpoint
-app.get('/api/users', (req, res) => {
-  db.query('SELECT * FROM students', (err, results) => {
+app.get('/api/student/:studentId', (req, res) => {
+  const studentId = req.params.studentId;
+  db.query('SELECT * FROM students WHERE student_id = ?', [studentId], (err, result) => {
     if (err) return res.status(500).json({ error: err });
-    res.json(results);
+    if (result.length === 0) return res.status(404).json({ error: "Student not found" });
+    res.json(result[0]);
   });
 });
+
 
 app.listen(3001, () => {
   console.log('Server running on http://localhost:3001');

@@ -123,7 +123,7 @@ function IDScan() {
     if (!isCorrect) {
       setManualIdEntry(true);
     } else {
-      navigate("/"); // Redirect to Login page
+      navigate("/", { state: { studentId } }); // Redirect to Login page
     }
   };
 

@@ -58,6 +58,8 @@ def register():
     os.makedirs("temp", exist_ok=True)
     file.save(file_path)
 
+    
+
     # Extract features using EfficientNet
     img = preprocess_image2(file_path)
     features = model.predict(img)
@@ -190,8 +192,12 @@ def capture_and_process():
 @app.route('/register', methods=['POST'])
 def register_face():
     name = request.form.get('name')
+    student_id = request.form.get('student_id')
     if not name:
         return jsonify({"error": "Name is required!"}), 400
+    
+    if not student_id:
+        return jsonify({"error": "Student ID is required!"}), 400
     
     image_file = request.files.get('image')
     if not image_file:
@@ -199,8 +205,17 @@ def register_face():
     
     in_memory_file = np.frombuffer(image_file.read(), np.uint8)
     image = cv2.imdecode(in_memory_file, cv2.IMREAD_COLOR)
-    filename = f"Opencv/images/{name}.jpg"
-    cv2.imwrite(filename, image)
+    
+    # Ensure directories exist
+    os.makedirs(f"Opencv/images/{student_id}", exist_ok=True)
+
+    # Save images in two locations
+    filename1 = f"Opencv/images/{name}.jpg"
+    filename2 = f"Opencv/images/{student_id}/{name}.jpg"
+    
+    cv2.imwrite(filename1, image)
+    cv2.imwrite(filename2, image)
+    
     
     return jsonify({"message": "Face registration successful!", "status": "Done"})
 

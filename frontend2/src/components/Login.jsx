@@ -1,6 +1,8 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import WebCam from "./WebCam"; // Reuse the WebCam component
-import { Link } from "react-router-dom";
+import { useLocation } from "react-router-dom"; 
+import axios from "axios";
+
 
 const Login = () => {
   const [name, setName] = useState(null);
@@ -8,6 +10,15 @@ const Login = () => {
   const [capturedImage, setCapturedImage] = useState(null); // Store the captured image as Data URL
   const [imageCaptured, setImageCaptured] = useState(false); // Track if image has been captured
   const [errorMessage, setErrorMessage] = useState(null); // Store error message if login fails
+  const location = useLocation();
+  const [studentId, setStudentId] = useState(location.state?.studentId || null);
+
+  useEffect(() => {
+    if (location.state?.studentId) {
+      setStudentId(location.state.studentId);
+    }
+  }, [location.state]);
+
 
   // Convert base64 image data to Blob
   const convertBase64ToBlob = (base64) => {
@@ -19,6 +30,16 @@ const Login = () => {
     }
     const byteArray = new Uint8Array(byteArrays);
     return new Blob([byteArray], { type: "image/jpeg" }); // Assuming the image is JPEG, update the type if needed
+  };
+
+    // Fetch student details after successful login
+  const fetchStudentDetails = async (studentId) => {
+    try {
+      const response = await axios.get(`http://localhost:3001/api/student/${studentId}`);
+      localStorage.setItem("studentDetails", JSON.stringify(response.data));
+    } catch (error) {
+      console.error("Failed to fetch student details:", error);
+    }
   };
 
   // Handle login process
@@ -34,6 +55,7 @@ const Login = () => {
     // Create FormData and append the Blob as a file
     const formData = new FormData();
     formData.append("image", imageBlob, "captured_image.jpg"); // Name the file for the backend
+    formData.append("studentId", studentId); // Append studentId to track login time
 
     fetch("http://127.0.0.1:5000/login", {
       method: "POST",
@@ -50,6 +72,7 @@ const Login = () => {
           setName(data.message);
           setLoggedIn(true);
           setErrorMessage(null); // Clear any previous error messages
+          fetchStudentDetails(studentId);
         }
       })
       .catch((err) => {
