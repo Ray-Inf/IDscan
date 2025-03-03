@@ -1,135 +1,172 @@
+
 // import React, { useState } from "react";
-// import WebCam from "./WebCam"; // Reuse the WebCam component
-// import { Link } from "react-router-dom";
+// import WebCam from "./WebCam";
+// import IDScan from "./IDScan";
+// import axios from "axios";
 
-// const Login = () => {
-//   const [name, setName] = useState(null);
-//   const [loggedIn, setLoggedIn] = useState(false);
-//   const [capturedImage, setCapturedImage] = useState(null); // Store the captured image as Data URL
-//   const [imageCaptured, setImageCaptured] = useState(false); // Track if image has been captured
-//   const [errorMessage, setErrorMessage] = useState(null); // Store error message if login fails
+// const Login = ({ setIsAuthenticated, setUserRole }) => {
+//   const [step, setStep] = useState("id-scan"); // "id-scan" or "face-capture"
+//   const [capturedImage, setCapturedImage] = useState(null);
+//   const [userId, setUserId] = useState("");
+//   const [userInfo, setUserInfo] = useState(null);
+//   const [errorMessage, setErrorMessage] = useState("");
+//   const [loading, setLoading] = useState(false);
 
-//   // Convert base64 image data to Blob
-//   const convertBase64ToBlob = (base64) => {
-//     const byteCharacters = atob(base64.split(",")[1]); // Remove the base64 header part
-//     const byteArrays = [];
-//     for (let offset = 0; offset < byteCharacters.length; offset++) {
-//       const byteArray = byteCharacters.charCodeAt(offset);
-//       byteArrays.push(byteArray);
-//     }
-//     const byteArray = new Uint8Array(byteArrays);
-//     return new Blob([byteArray], { type: "image/jpeg" }); // Assuming the image is JPEG, update the type if needed
+//   // Handle ID scan completion
+//   const handleIDExtracted = (extractedUserId, extractedInfo) => {
+//     setUserId(extractedUserId);
+//     setUserInfo(extractedInfo);
+//     setStep("face-capture");
 //   };
 
-//   // Handle login process
-//   const login = () => {
+//   // Handle login verification with face
+//   const handleLogin = async () => {
 //     if (!capturedImage) {
-//       alert("Please capture an image using the webcam.");
+//       setErrorMessage("Please capture an image using the webcam.");
 //       return;
 //     }
 
-//     // Convert the base64 image to Blob
-//     const imageBlob = convertBase64ToBlob(capturedImage);
+//     if (!userId) {
+//       setErrorMessage("User ID not found. Please scan your ID card again.");
+//       setStep("id-scan");
+//       return;
+//     }
 
-//     // Create FormData and append the Blob as a file
-//     const formData = new FormData();
-//     formData.append("image", imageBlob, "captured_image.jpg"); // Name the file for the backend
+//     setLoading(true);
+//     setErrorMessage("");
 
-//     fetch("http://127.0.0.1:5000/login", {
-//       method: "POST",
-//       body: formData,
-//     })
-//       .then((res) => res.text())
-//       .then((res) => {
-//         if (res.includes("Error")) {
-//           // If the response includes 'Error', show the error message
-//           setErrorMessage(res);
-//           setLoggedIn(false);
-//         } else {
-//           // If login is successful
-//           setName(res);
-//           setLoggedIn(true);
-//           setErrorMessage(null); // Clear any previous error messages
-//         }
-//       })
-//       .catch((err) => {
-//         console.error("Error:", err);
-//         setErrorMessage("An error occurred. Please try again.");
+//     try {
+//       const formData = new FormData();
+//       formData.append("live_image", dataURLtoBlob(capturedImage));
+//       formData.append("user_id", userId);
+
+//       const response = await axios.post("http://127.0.0.1:5000/auth/login", formData, {
+//         headers: { "Content-Type": "multipart/form-data" },
 //       });
+
+//       if (response.data.match) {
+//         localStorage.setItem(
+//           "user",
+//           JSON.stringify({
+//             id: userId,
+//             name: response.data.name,
+//             role: response.data.role || "user",
+//           })
+//         );
+//         setIsAuthenticated(true);
+//         setUserRole(response.data.role || "user");
+//       } else {
+//         setErrorMessage(response.data.message || "Face verification failed. Please try again.");
+//         setCapturedImage(null);
+//       }
+//     } catch (error) {
+//       console.error("Error during login:", error);
+      
+//       let errorMsg = "An error occurred while verifying your face. Please try again.";
+      
+//       // Extract more specific error message from response if available
+//       if (error.response && error.response.data && error.response.data.error) {
+//         errorMsg = error.response.data.error;
+//       }
+      
+//       setErrorMessage(errorMsg);
+//       setCapturedImage(null);
+//     } finally {
+//       setLoading(false);
+//     }
 //   };
 
-//   // Handle the retake of the image
-//   const handleRetake = () => {
-//     setCapturedImage(null); // Reset captured image
-//     setImageCaptured(false); // Reset image captured flag
-//     setErrorMessage(null); // Reset error message
+//   // Handle ID scan errors
+//   const handleScanError = (error) => {
+//     setErrorMessage(error);
+//     setStep("id-scan");
+//   };
+
+//   // Converts a base64 Data URL to a Blob object for file upload
+//   const dataURLtoBlob = (dataURL) => {
+//     const byteString = atob(dataURL.split(",")[1]);
+//     const mimeString = dataURL.split(",")[0].split(":")[1].split(";")[0];
+//     const arrayBuffer = new ArrayBuffer(byteString.length);
+//     const uint8Array = new Uint8Array(arrayBuffer);
+//     for (let i = 0; i < byteString.length; i++) {
+//       uint8Array[i] = byteString.charCodeAt(i);
+//     }
+//     return new Blob([arrayBuffer], { type: mimeString });
 //   };
 
 //   return (
-//     <div className="min-h-screen bg-gray-50 flex items-center justify-center p-8">
-//       <div className="max-w-lg w-full bg-white p-6 rounded-lg shadow-lg">
-//         {!loggedIn ? (
-//           <div className="text-center">
+//     <div className="min-h-screen flex justify-center items-center bg-gray-100">
+//       <div className="p-6 max-w-md mx-auto bg-white shadow-md rounded-md">
+//         <h2 className="text-2xl font-bold mb-4 text-center">Login</h2>
+        
+//         {/* Step 1: ID Scan */}
+//         {step === "id-scan" && (
+//           <IDScan 
+//             onIDExtracted={handleIDExtracted}
+//             onError={handleScanError}
+//           />
+//         )}
+
+//         {/* Step 2: Face Capture */}
+//         {step === "face-capture" && (
+//           <>
+//             {userInfo && (
+//               <div className="mb-4 p-3 bg-blue-50 rounded-md">
+//                 <h3 className="font-semibold">{userInfo.isNewUser ? "New User Detected" : "ID Verified"}</h3>
+//                 {!userInfo.isNewUser && (
+//                   <p className="text-sm text-gray-600">Hello, {userInfo.name || "User"}</p>
+//                 )}
+//                 <p className="text-sm text-gray-600">
+//                   Please look at the camera for face verification.
+//                 </p>
+//               </div>
+//             )}
+            
 //             {!capturedImage ? (
-//               // Reuse the WebCam component for capturing image
-//               <WebCam
-//                 onCapture={(imageData) => {
-//                   setCapturedImage(imageData);
-//                   setImageCaptured(true);
-//                 }} // Capture image and set the flag
-//               />
+//               <WebCam onCapture={(imageData) => setCapturedImage(imageData)} />
 //             ) : (
-//               <div className="mt-4">
-//                 <img
-//                   src={capturedImage}
-//                   alt="Captured"
-//                   className="w-full h-auto rounded-lg mb-4"
-//                 />
+//               <div className="mb-4">
+//                 <img src={capturedImage} alt="Captured" className="w-full h-64 object-cover rounded-md" />
 //                 <button
-//                   onClick={handleRetake}
-//                   className="w-full py-2 px-4 bg-yellow-500 text-white font-semibold rounded-lg hover:bg-yellow-600 focus:outline-none focus:ring-2 focus:ring-yellow-500 focus:ring-opacity-50"
+//                   onClick={() => setCapturedImage(null)}
+//                   className="mt-2 w-full bg-red-500 text-white py-2 px-4 rounded-md hover:bg-red-600 focus:outline-none"
 //                 >
 //                   Retake Image
 //                 </button>
 //               </div>
 //             )}
 
-//             {imageCaptured && (
-//               <button
-//                 onClick={login}
-//                 className="mt-4 w-full py-2 px-4 bg-indigo-600 text-white font-semibold rounded-lg hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-opacity-50"
-//               >
-//                 Authenticate Me
-//               </button>
-//             )}
-
-//             {errorMessage && (
-//               <div className="mt-4 text-red-600">
-//                 <p>{errorMessage}</p>
-//               </div>
-//             )}
-//           </div>
-//         ) : (
-//           <div className="text-center">
-//             <h2 className="text-2xl font-semibold text-indigo-600 mb-4">
-//               Hello {name}!
-//             </h2>
-//             <p className="text-gray-700 mb-4">
-//               You are successfully logged in to the system. You may logout of
-//               the system by clicking the button below.
-//             </p>
+//             {/* Back to ID Scan Button */}
 //             <button
 //               onClick={() => {
-//                 setName(null);
-//                 setLoggedIn(false);
-//                 setCapturedImage(null); // Clear captured image after logout
-//                 setImageCaptured(false); // Reset image captured flag
-//                 setErrorMessage(null); // Reset error message
+//                 setStep("id-scan");
+//                 setCapturedImage(null);
+//                 setUserId("");
+//                 setUserInfo(null);
+//                 setErrorMessage("");
 //               }}
-//               className="w-full py-2 px-4 bg-red-600 text-white font-semibold rounded-lg hover:bg-red-700 focus:outline-none focus:ring-2 focus:ring-red-500 focus:ring-opacity-50"
+//               className="w-full mb-2 bg-gray-500 text-white py-2 px-4 rounded-md hover:bg-gray-600 focus:outline-none"
 //             >
-//               Logout
+//               Back to ID Scan
 //             </button>
+
+//             {/* Authenticate Button */}
+//             {capturedImage && (
+//               <button
+//                 onClick={handleLogin}
+//                 disabled={loading}
+//                 className="w-full bg-blue-500 text-white py-2 px-4 rounded-md hover:bg-blue-600 focus:outline-none disabled:bg-blue-300"
+//               >
+//                 {loading ? "Authenticating..." : "Authenticate Me"}
+//               </button>
+//             )}
+//           </>
+//         )}
+
+//         {/* Error Message */}
+//         {errorMessage && (
+//           <div className="mt-4 p-3 bg-red-50 border border-red-200 rounded-md text-red-600 text-center">
+//             {errorMessage}
 //           </div>
 //         )}
 //       </div>
@@ -139,148 +176,177 @@
 
 // export default Login;
 import React, { useState } from "react";
-import WebCam from "./WebCam"; // Reuse the WebCam component
-import { Link } from "react-router-dom";
+import { useNavigate } from "react-router-dom"; // ✅ Import useNavigate
+import WebCam from "./WebCam";
+import IDScan from "./IDScan";
+import axios from "axios";
 
-const Login = () => {
-  const [name, setName] = useState(null);
-  const [loggedIn, setLoggedIn] = useState(false);
-  const [capturedImage, setCapturedImage] = useState(null); // Store the captured image as Data URL
-  const [imageCaptured, setImageCaptured] = useState(false); // Track if image has been captured
-  const [errorMessage, setErrorMessage] = useState(null); // Store error message if login fails
-  const [livenessCheck, setLivenessCheck] = useState(false); // State for liveness check
+const Login = ({ setIsAuthenticated, setUserRole }) => {
+  const navigate = useNavigate(); // ✅ Initialize navigate
+  const [step, setStep] = useState("id-scan"); 
+  const [capturedImage, setCapturedImage] = useState(null);
+  const [userId, setUserId] = useState("");
+  const [userInfo, setUserInfo] = useState(null);
+  const [errorMessage, setErrorMessage] = useState("");
+  const [loading, setLoading] = useState(false);
 
-  // Convert base64 image data to Blob
-  const convertBase64ToBlob = (base64) => {
-    const byteCharacters = atob(base64.split(",")[1]); // Remove the base64 header part
-    const byteArrays = [];
-    for (let offset = 0; offset < byteCharacters.length; offset++) {
-      const byteArray = byteCharacters.charCodeAt(offset);
-      byteArrays.push(byteArray);
-    }
-    const byteArray = new Uint8Array(byteArrays);
-    return new Blob([byteArray], { type: "image/jpeg" }); // Assuming the image is JPEG, update the type if needed
+  // Handle ID scan completion
+  const handleIDExtracted = (extractedUserId, extractedInfo) => {
+    setUserId(extractedUserId);
+    setUserInfo(extractedInfo);
+    setStep("face-capture");
   };
 
-  // Handle login process
-  const login = () => {
+  // Handle login verification with face
+  const handleLogin = async () => {
     if (!capturedImage) {
-      alert("Please capture an image using the webcam.");
+      setErrorMessage("Please capture an image using the webcam.");
       return;
     }
 
-    // Convert the base64 image to Blob
-    const imageBlob = convertBase64ToBlob(capturedImage);
+    if (!userId) {
+      setErrorMessage("User ID not found. Please scan your ID card again.");
+      setStep("id-scan");
+      return;
+    }
 
-    // Create FormData and append the Blob as a file
-    const formData = new FormData();
-    formData.append("image", imageBlob, "captured_image.jpg"); // Name the file for the backend
+    setLoading(true);
+    setErrorMessage("");
 
-    fetch("http://127.0.0.1:5000/login", {
-      method: "POST",
-      body: formData,
-    })
-      .then((res) => res.json())
-      .then((data) => {
-        if (data.error) {
-          // If the response includes 'Error', show the error message
-          setErrorMessage(data.error);
-          setLoggedIn(false);
-          setLivenessCheck(false); // Liveness check failed
-        } else {
-          // If login is successful
-          setName(data.message.split(", ")[1]); // Extract the name from the message
-          setLoggedIn(true);
-          setErrorMessage(null); // Clear any previous error messages
-          setLivenessCheck(true); // Liveness check passed
-        }
-      })
-      .catch((err) => {
-        console.error("Error:", err);
-        setErrorMessage("An error occurred. Please try again.");
+    try {
+      const formData = new FormData();
+      formData.append("live_image", dataURLtoBlob(capturedImage));
+      formData.append("user_id", userId);
+
+      const response = await axios.post("http://127.0.0.1:5000/auth/login", formData, {
+        headers: { "Content-Type": "multipart/form-data" },
       });
+
+      if (response.data.match) {
+        localStorage.setItem(
+          "user",
+          JSON.stringify({
+            id: userId,
+            name: response.data.name,
+            role: response.data.role || "user",
+          })
+        );
+
+        setIsAuthenticated(true);
+        setUserRole(response.data.role || "user");
+
+        // ✅ Redirect to dashboard
+        navigate("/dashboard");
+      } else {
+        setErrorMessage(response.data.message || "Face verification failed. Please try again.");
+        setCapturedImage(null);
+      }
+    } catch (error) {
+      console.error("Error during login:", error);
+      let errorMsg = "An error occurred while verifying your face. Please try again.";
+      
+      if (error.response && error.response.data && error.response.data.error) {
+        errorMsg = error.response.data.error;
+      }
+      
+      setErrorMessage(errorMsg);
+      setCapturedImage(null);
+    } finally {
+      setLoading(false);
+    }
   };
 
-  // Handle the retake of the image
-  const handleRetake = () => {
-    setCapturedImage(null); // Reset captured image
-    setImageCaptured(false); // Reset image captured flag
-    setErrorMessage(null); // Reset error message
-    setLivenessCheck(false); // Reset liveness check
+  // Handle ID scan errors
+  const handleScanError = (error) => {
+    setErrorMessage(error);
+    setStep("id-scan");
+  };
+
+  // Converts a base64 Data URL to a Blob object for file upload
+  const dataURLtoBlob = (dataURL) => {
+    const byteString = atob(dataURL.split(",")[1]);
+    const mimeString = dataURL.split(",")[0].split(":")[1].split(";")[0];
+    const arrayBuffer = new ArrayBuffer(byteString.length);
+    const uint8Array = new Uint8Array(arrayBuffer);
+    for (let i = 0; i < byteString.length; i++) {
+      uint8Array[i] = byteString.charCodeAt(i);
+    }
+    return new Blob([arrayBuffer], { type: mimeString });
   };
 
   return (
-    <div className="min-h-screen bg-gray-50 flex items-center justify-center p-8">
-      <div className="max-w-lg w-full bg-white p-6 rounded-lg shadow-lg">
-        {!loggedIn ? (
-          <div className="text-center">
+    <div className="min-h-screen flex justify-center items-center bg-gray-100">
+      <div className="p-6 max-w-md mx-auto bg-white shadow-md rounded-md">
+        <h2 className="text-2xl font-bold mb-4 text-center">Login</h2>
+        
+        {/* Step 1: ID Scan */}
+        {step === "id-scan" && (
+          <IDScan 
+            onIDExtracted={handleIDExtracted}
+            onError={handleScanError}
+          />
+        )}
+
+        {/* Step 2: Face Capture */}
+        {step === "face-capture" && (
+          <>
+            {userInfo && (
+              <div className="mb-4 p-3 bg-blue-50 rounded-md">
+                <h3 className="font-semibold">{userInfo.isNewUser ? "New User Detected" : "ID Verified"}</h3>
+                {!userInfo.isNewUser && (
+                  <p className="text-sm text-gray-600">Hello, {userInfo.name || "User"}</p>
+                )}
+                <p className="text-sm text-gray-600">
+                  Please look at the camera for face verification.
+                </p>
+              </div>
+            )}
+            
             {!capturedImage ? (
-              // Reuse the WebCam component for capturing image
-              <WebCam
-                onCapture={(imageData) => {
-                  setCapturedImage(imageData);
-                  setImageCaptured(true);
-                }} // Capture image and set the flag
-              />
+              <WebCam onCapture={(imageData) => setCapturedImage(imageData)} />
             ) : (
-              <div className="mt-4">
-                <img
-                  src={capturedImage}
-                  alt="Captured"
-                  className="w-full h-auto rounded-lg mb-4"
-                />
+              <div className="mb-4">
+                <img src={capturedImage} alt="Captured" className="w-full h-64 object-cover rounded-md" />
                 <button
-                  onClick={handleRetake}
-                  className="w-full py-2 px-4 bg-yellow-500 text-white font-semibold rounded-lg hover:bg-yellow-600 focus:outline-none focus:ring-2 focus:ring-yellow-500 focus:ring-opacity-50"
+                  onClick={() => setCapturedImage(null)}
+                  className="mt-2 w-full bg-red-500 text-white py-2 px-4 rounded-md hover:bg-red-600 focus:outline-none"
                 >
                   Retake Image
                 </button>
               </div>
             )}
 
-            {imageCaptured && (
-              <button
-                onClick={login}
-                className="mt-4 w-full py-2 px-4 bg-indigo-600 text-white font-semibold rounded-lg hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-opacity-50"
-              >
-                Authenticate Me
-              </button>
-            )}
-
-            {errorMessage && (
-              <div className="mt-4 text-red-600">
-                <p>{errorMessage}</p>
-              </div>
-            )}
-
-            {livenessCheck && (
-              <div className="mt-4 text-green-600">
-                <p>Liveness check passed!</p>
-              </div>
-            )}
-          </div>
-        ) : (
-          <div className="text-center">
-            <h2 className="text-2xl font-semibold text-indigo-600 mb-4">
-              Hello {name}!
-            </h2>
-            <p className="text-gray-700 mb-4">
-              You are successfully logged in to the system. You may logout of
-              the system by clicking the button below.
-            </p>
+            {/* Back to ID Scan Button */}
             <button
               onClick={() => {
-                setName(null);
-                setLoggedIn(false);
-                setCapturedImage(null); // Clear captured image after logout
-                setImageCaptured(false); // Reset image captured flag
-                setErrorMessage(null); // Reset error message
-                setLivenessCheck(false); // Reset liveness check
+                setStep("id-scan");
+                setCapturedImage(null);
+                setUserId("");
+                setUserInfo(null);
+                setErrorMessage("");
               }}
-              className="w-full py-2 px-4 bg-red-600 text-white font-semibold rounded-lg hover:bg-red-700 focus:outline-none focus:ring-2 focus:ring-red-500 focus:ring-opacity-50"
+              className="w-full mb-2 bg-gray-500 text-white py-2 px-4 rounded-md hover:bg-gray-600 focus:outline-none"
             >
-              Logout
+              Back to ID Scan
             </button>
+
+            {/* Authenticate Button */}
+            {capturedImage && (
+              <button
+                onClick={handleLogin}
+                disabled={loading}
+                className="w-full bg-blue-500 text-white py-2 px-4 rounded-md hover:bg-blue-600 focus:outline-none disabled:bg-blue-300"
+              >
+                {loading ? "Authenticating..." : "Authenticate Me"}
+              </button>
+            )}
+          </>
+        )}
+
+        {/* Error Message */}
+        {errorMessage && (
+          <div className="mt-4 p-3 bg-red-50 border border-red-200 rounded-md text-red-600 text-center">
+            {errorMessage}
           </div>
         )}
       </div>

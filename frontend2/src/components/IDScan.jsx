@@ -1,130 +1,431 @@
-import React, { useState, useRef, useEffect } from 'react';
 
-function IDScan() {
-  const [extractedText, setExtractedText] = useState('');
-  const [detectedFace, setDetectedFace] = useState('');
-  const [matchFound, setMatchFound] = useState(null); // State to store match status
-  const [matchedName, setMatchedName] = useState('');
-  const [error, setError] = useState(''); // State to store any errors
-  const [isCapturing, setIsCapturing] = useState(false); // State to control capturing
+// import React, { useState, useRef, useCallback } from "react";
+// import axios from "axios";
+
+// const IDScan = ({ onIDExtracted, onError }) => {
+//   const [capturedImage, setCapturedImage] = useState(null);
+//   const [scanning, setScanning] = useState(false);
+//   const [scanStatus, setScanStatus] = useState(""); // For showing verification steps
+//   const [scanProgress, setScanProgress] = useState(0); // For progress indication
+//   const videoRef = useRef(null);
+//   const streamRef = useRef(null);
+
+//   // Start webcam to scan ID
+//   const startWebcam = useCallback(async () => {
+//     try {
+//       const stream = await navigator.mediaDevices.getUserMedia({
+//         video: { facingMode: "environment", width: { ideal: 1280 }, height: { ideal: 720 } }
+//       });
+      
+//       streamRef.current = stream;
+//       if (videoRef.current) {
+//         videoRef.current.srcObject = stream;
+//       }
+//     } catch (error) {
+//       console.error("Error accessing camera:", error);
+//       onError("Camera access denied. Please enable camera permissions.");
+//     }
+//   }, [onError]);
+
+//   // Stop webcam stream
+//   const stopWebcam = useCallback(() => {
+//     if (streamRef.current) {
+//       streamRef.current.getTracks().forEach(track => track.stop());
+//       streamRef.current = null;
+//     }
+//   }, []);
+
+//   // Capture ID image
+//   const captureID = useCallback(() => {
+//     if (videoRef.current) {
+//       const canvas = document.createElement("canvas");
+//       const context = canvas.getContext("2d");
+//       canvas.width = videoRef.current.videoWidth;
+//       canvas.height = videoRef.current.videoHeight;
+//       context.drawImage(videoRef.current, 0, 0, canvas.width, canvas.height);
+//       const imageData = canvas.toDataURL("image/jpeg");
+//       setCapturedImage(imageData);
+//       stopWebcam();
+//       setScanning(true);
+//       setScanStatus("Starting ID verification process");
+//       setScanProgress(10);
+      
+//       // Send the captured ID to backend for processing
+//       processID(imageData);
+//     }
+//   }, [stopWebcam]);
+
+//   // Process the ID image to extract information
+//   const processID = async (imageData) => {
+//     try {
+//       // Create form data with the image
+//       const formData = new FormData();
+//       formData.append("id_image", dataURLtoBlob(imageData));
+      
+//       setScanStatus("Analyzing ID card...");
+//       setScanProgress(30);
+      
+//       // Call backend API
+//       const response = await axios.post("http://127.0.0.1:5000/id-card/scan", formData, {
+//         headers: { "Content-Type": "multipart/form-data" }
+//       });
+      
+//       setScanStatus("Verifying ID card template...");
+//       setScanProgress(60);
+      
+//       // Simulate template verification delay (since it's already done on backend)
+//       await new Promise(resolve => setTimeout(resolve, 500));
+//       setScanStatus("Extracting ID information...");
+//       setScanProgress(80);
+      
+//       // Simulate OCR delay (since it's already done on backend)
+//       await new Promise(resolve => setTimeout(resolve, 500));
+//       setScanStatus("Verification complete");
+//       setScanProgress(100);
+      
+//       if (response.data.user_id) {
+//         if (response.data.new_user) {
+//           // This is a new user with a valid card
+//           onIDExtracted(response.data.card_id, {
+//             templateId: response.data.template_id,
+//             templateName: response.data.template_name,
+//             isNewUser: true
+//           });
+//         } else {
+//           // This is an existing user
+//           onIDExtracted(response.data.user_id, {
+//             name: response.data.name,
+//             role: response.data.role,
+//             templateId: response.data.template_id,
+//             similarity: response.data.similarity,
+//             isNewUser: false
+//           });
+//         }
+//         setScanning(false);
+//       } else {
+//         onError("Could not extract ID information. Please try again.");
+//         setCapturedImage(null);
+//         startWebcam();
+//         setScanning(false);
+//         setScanProgress(0);
+//       }
+//     } catch (error) {
+//       console.error("Error processing ID:", error);
+//       let errorMessage = "Error processing ID card. Please try again.";
+      
+//       // Extract more specific error message from response if available
+//       if (error.response && error.response.data && error.response.data.error) {
+//         errorMessage = error.response.data.error;
+//       }
+      
+//       onError(errorMessage);
+//       setCapturedImage(null);
+//       startWebcam();
+//       setScanning(false);
+//       setScanProgress(0);
+//     }
+//   };
+
+//   // Converts a base64 Data URL to a Blob object for file upload
+//   const dataURLtoBlob = (dataURL) => {
+//     const byteString = atob(dataURL.split(",")[1]);
+//     const mimeString = dataURL.split(",")[0].split(":")[1].split(";")[0];
+//     const arrayBuffer = new ArrayBuffer(byteString.length);
+//     const uint8Array = new Uint8Array(arrayBuffer);
+//     for (let i = 0; i < byteString.length; i++) {
+//       uint8Array[i] = byteString.charCodeAt(i);
+//     }
+//     return new Blob([arrayBuffer], { type: mimeString });
+//   };
+
+//   // Initialize webcam on component mount
+//   React.useEffect(() => {
+//     startWebcam();
+//     return () => {
+//       stopWebcam();
+//     };
+//   }, [startWebcam, stopWebcam]);
+
+//   return (
+//     <div className="flex flex-col items-center justify-center">
+//       <h3 className="text-lg font-bold mb-2">ID Card Scanner</h3>
+//       <p className="mb-4 text-sm text-gray-600">Position your ID card in frame and ensure good lighting</p>
+      
+//       {!capturedImage ? (
+//         <>
+//           <div className="relative w-full h-64 bg-black rounded-md overflow-hidden mb-4">
+//             <video
+//               ref={videoRef}
+//               className="w-full h-full object-cover"
+//               autoPlay
+//               playsInline
+//             />
+//             <div className="absolute inset-0 border-2 border-dashed border-white opacity-70 pointer-events-none">
+//               {/* Guide overlay */}
+//               <div className="absolute inset-2 border border-yellow-400 opacity-50"></div>
+//               <div className="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 text-white text-xs text-center p-1 bg-black bg-opacity-50 rounded">
+//                 Align ID card here
+//               </div>
+//             </div>
+//           </div>
+//           <button
+//             onClick={captureID}
+//             className="w-full bg-blue-500 text-white py-2 px-4 rounded-md hover:bg-blue-600 focus:outline-none"
+//           >
+//             Scan ID
+//           </button>
+//         </>
+//       ) : (
+//         <>
+//           <div className="w-full h-64 bg-black rounded-md overflow-hidden mb-4">
+//             <img src={capturedImage} alt="Captured ID" className="w-full h-full object-cover" />
+//           </div>
+//           {scanning ? (
+//             <div className="w-full">
+//               <div className="flex justify-between mb-1">
+//                 <span className="text-sm">{scanStatus}</span>
+//                 <span className="text-sm">{scanProgress}%</span>
+//               </div>
+//               <div className="w-full bg-gray-200 rounded-full h-2.5">
+//                 <div 
+//                   className="bg-blue-600 h-2.5 rounded-full transition-all duration-300" 
+//                   style={{width: `${scanProgress}%`}}
+//                 ></div>
+//               </div>
+//             </div>
+//           ) : (
+//             <button
+//               onClick={() => {
+//                 setCapturedImage(null);
+//                 setScanProgress(0);
+//                 startWebcam();
+//               }}
+//               className="w-full bg-red-500 text-white py-2 px-4 rounded-md hover:bg-red-600 focus:outline-none"
+//             >
+//               Rescan ID
+//             </button>
+//           )}
+//         </>
+//       )}
+//       <div className="mt-2 text-xs text-gray-500 italic">
+//         * System will verify ID card against approved templates
+//       </div>
+//     </div>
+//   );
+// };
+
+// export default IDScan;
+import React, { useState, useRef, useCallback } from "react";
+import axios from "axios";
+
+const IDScan = ({ onIDExtracted, onError }) => {
+  const [capturedImage, setCapturedImage] = useState(null);
+  const [scanning, setScanning] = useState(false);
+  const [scanStatus, setScanStatus] = useState(""); // For showing verification steps
+  const [scanProgress, setScanProgress] = useState(0); // For progress indication
   const videoRef = useRef(null);
-  const canvasRef = useRef(null);
-  const intervalRef = useRef(null); // Ref to store the interval ID
-  const streamRef = useRef(null); // Ref to store the video stream
+  const streamRef = useRef(null);
 
-  useEffect(() => {
-    // Cleanup the interval and video stream when the component is unmounted or capturing stops
-    return () => {
-      if (intervalRef.current) {
-        clearInterval(intervalRef.current);
+  // Start webcam to scan ID
+  const startWebcam = useCallback(async () => {
+    try {
+      const stream = await navigator.mediaDevices.getUserMedia({
+        video: { facingMode: "environment", width: { ideal: 1280 }, height: { ideal: 720 } }
+      });
+      
+      streamRef.current = stream;
+      if (videoRef.current) {
+        videoRef.current.srcObject = stream;
       }
-      if (streamRef.current) {
-        streamRef.current.getTracks().forEach(track => track.stop());
-      }
-    };
-  }, []);
-
-  const startCapture = () => {
-    if (!isCapturing) {
-      // Start video feed
-      navigator.mediaDevices.getUserMedia({ video: true })
-        .then((stream) => {
-          streamRef.current = stream;
-          videoRef.current.srcObject = stream;
-          videoRef.current.play();
-          setIsCapturing(true);
-        })
-        .catch((err) => {
-          console.log("Error accessing the camera", err);
-        });
+    } catch (error) {
+      console.error("Error accessing camera:", error);
+      onError("Camera access denied. Please enable camera permissions.");
     }
-  };
+  }, [onError]);
 
-  const stopCapture = () => {
-    // Stop capturing and video stream
+  // Stop webcam stream
+  const stopWebcam = useCallback(() => {
     if (streamRef.current) {
       streamRef.current.getTracks().forEach(track => track.stop());
+      streamRef.current = null;
     }
-    setIsCapturing(false);
-  };
+  }, []);
 
-  const captureFrame = () => {
-    const canvas = canvasRef.current;
-    const context = canvas.getContext('2d');
-    context.drawImage(videoRef.current, 0, 0, canvas.width, canvas.height);
+  // Capture ID image
+  const captureID = useCallback(() => {
+    if (videoRef.current) {
+      const canvas = document.createElement("canvas");
+      const context = canvas.getContext("2d");
+      canvas.width = videoRef.current.videoWidth;
+      canvas.height = videoRef.current.videoHeight;
+      context.drawImage(videoRef.current, 0, 0, canvas.width, canvas.height);
+      const imageData = canvas.toDataURL("image/jpeg");
+      setCapturedImage(imageData);
+      stopWebcam();
+      setScanning(true);
+      setScanStatus("Starting ID verification process");
+      setScanProgress(10);
+      
+      // Send the captured ID to backend for processing
+      processID(imageData);
+    }
+  }, [stopWebcam]);
 
-    // Convert the canvas to a base64 image
-    const imageData = canvas.toDataURL('image/jpeg');
-
-    // Send the image to the backend for processing
-    fetch('http://localhost:5000/capture', {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify({ imageData }),
-    })
-      .then(response => response.json())
-      .then(data => {
-        // Handle backend response
-        if (data.error) {
-          setError(data.error); // Display any error message
-        } else {
-          if (data.extractedText) {
-            setExtractedText(data.extractedText);
-          }
-          if (data.detectedFace) {
-            setDetectedFace(data.detectedFace);
-          }
-          setMatchFound(data.matchFound); // Set match status
-          if (data.matchFound) {
-            setMatchedName(data.matchedName); // Set matched name
-          }
-        }
-      })
-      .catch(error => {
-        console.error('Error:', error);
-        setError("An error occurred while capturing the image.");
+  // Process the ID image to extract information
+  const processID = async (imageData) => {
+    try {
+      // Create form data with the image
+      const formData = new FormData();
+      formData.append("id_image", dataURLtoBlob(imageData));
+      
+      setScanStatus("Analyzing ID card...");
+      setScanProgress(30);
+      
+      // Call backend API
+      const response = await axios.post("http://127.0.0.1:5000/id-card/scan", formData, {
+        headers: { "Content-Type": "multipart/form-data" }
       });
+      
+      setScanStatus("Verifying ID card template...");
+      setScanProgress(60);
+      
+      // Simulate template verification delay (since it's already done on backend)
+      await new Promise(resolve => setTimeout(resolve, 500));
+      setScanStatus("Extracting ID information...");
+      setScanProgress(80);
+      
+      // Simulate OCR delay (since it's already done on backend)
+      await new Promise(resolve => setTimeout(resolve, 500));
+      setScanStatus("Verification complete");
+      setScanProgress(100);
+      
+      if (response.data.user_id || response.data.card_id) {
+        // Get the ID to use (card_id for new users, user_id for existing users)
+        const userId = response.data.user_id || response.data.card_id;
+        
+        // Extract user information
+        const userInfo = {
+          name: response.data.name,
+          role: response.data.role,
+          templateId: response.data.template_id,
+          templateName: response.data.template_name,
+          similarity: response.data.similarity,
+          isNewUser: response.data.new_user || false
+        };
+        
+        // Pass both the user ID and additional information
+        onIDExtracted(userId, userInfo);
+        setScanning(false);
+      } else {
+        onError("Could not extract ID information. Please try again.");
+        setCapturedImage(null);
+        startWebcam();
+        setScanning(false);
+        setScanProgress(0);
+      }
+    } catch (error) {
+      console.error("Error processing ID:", error);
+      let errorMessage = "Error processing ID card. Please try again.";
+      
+      // Extract more specific error message from response if available
+      if (error.response && error.response.data && error.response.data.error) {
+        errorMessage = error.response.data.error;
+      }
+      
+      onError(errorMessage);
+      setCapturedImage(null);
+      startWebcam();
+      setScanning(false);
+      setScanProgress(0);
+    }
   };
 
-  const resetCapture = () => {
-    setExtractedText('');
-    setDetectedFace('');
-    setMatchFound(null);
-    setMatchedName('');
-    setError('');
-    stopCapture();
+  // Converts a base64 Data URL to a Blob object for file upload
+  const dataURLtoBlob = (dataURL) => {
+    const byteString = atob(dataURL.split(",")[1]);
+    const mimeString = dataURL.split(",")[0].split(":")[1].split(";")[0];
+    const arrayBuffer = new ArrayBuffer(byteString.length);
+    const uint8Array = new Uint8Array(arrayBuffer);
+    for (let i = 0; i < byteString.length; i++) {
+      uint8Array[i] = byteString.charCodeAt(i);
+    }
+    return new Blob([arrayBuffer], { type: mimeString });
   };
+
+  // Initialize webcam on component mount
+  React.useEffect(() => {
+    startWebcam();
+    return () => {
+      stopWebcam();
+    };
+  }, [startWebcam, stopWebcam]);
 
   return (
-    <div>
-      <video ref={videoRef} width="640" height="480" />
-      <canvas ref={canvasRef} width="640" height="480" style={{ display: 'none' }} />
-
-      <div>
-        {detectedFace && <img src={detectedFace} alt="Detected Face" />}
-        {matchFound !== null && (
-          <p>
-            {matchFound ? `Match found: ${matchedName}` : 'No matching face detected.'}
-          </p>
-        )}
-        {extractedText && <p>{extractedText}</p>}
-        {error && <p style={{ color: 'red' }}>{error}</p>}
-      </div>
-
-      <div>
-        {!isCapturing ? (
-          <button className='m-2 p-5 bg-indigo-600 text-white rounded-md' onClick={startCapture}>Start Capturing</button>
-        ) : (
-          <button className='m-2 p-5 bg-indigo-600 text-white rounded-md' onClick={stopCapture}>Stop Capturing</button>
-        )}
-
-        <button className='m-2 p-5 bg-indigo-600 text-white rounded-md' onClick={captureFrame}>Extract</button>
-        <button className='m-2 p-5 bg-indigo-600 text-white rounded-md' onClick={resetCapture}>Reset</button>
+    <div className="flex flex-col items-center justify-center">
+      <h3 className="text-lg font-bold mb-2">ID Card Scanner</h3>
+      <p className="mb-4 text-sm text-gray-600">Position your ID card in frame and ensure good lighting</p>
+      
+      {!capturedImage ? (
+        <>
+          <div className="relative w-full h-64 bg-black rounded-md overflow-hidden mb-4">
+            <video
+              ref={videoRef}
+              className="w-full h-full object-cover"
+              autoPlay
+              playsInline
+            />
+            <div className="absolute inset-0 border-2 border-dashed border-white opacity-70 pointer-events-none">
+              {/* Guide overlay */}
+              <div className="absolute inset-2 border border-yellow-400 opacity-50"></div>
+              <div className="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 text-white text-xs text-center p-1 bg-black bg-opacity-50 rounded">
+                Align ID card here
+              </div>
+            </div>
+          </div>
+          <button
+            onClick={captureID}
+            className="w-full bg-blue-500 text-white py-2 px-4 rounded-md hover:bg-blue-600 focus:outline-none"
+          >
+            Scan ID
+          </button>
+        </>
+      ) : (
+        <>
+          <div className="w-full h-64 bg-black rounded-md overflow-hidden mb-4">
+            <img src={capturedImage} alt="Captured ID" className="w-full h-full object-cover" />
+          </div>
+          {scanning ? (
+            <div className="w-full">
+              <div className="flex justify-between mb-1">
+                <span className="text-sm">{scanStatus}</span>
+                <span className="text-sm">{scanProgress}%</span>
+              </div>
+              <div className="w-full bg-gray-200 rounded-full h-2.5">
+                <div 
+                  className="bg-blue-600 h-2.5 rounded-full transition-all duration-300" 
+                  style={{width: `${scanProgress}%`}}
+                ></div>
+              </div>
+            </div>
+          ) : (
+            <button
+              onClick={() => {
+                setCapturedImage(null);
+                setScanProgress(0);
+                startWebcam();
+              }}
+              className="w-full bg-red-500 text-white py-2 px-4 rounded-md hover:bg-red-600 focus:outline-none"
+            >
+              Rescan ID
+            </button>
+          )}
+        </>
+      )}
+      <div className="mt-2 text-xs text-gray-500 italic">
+        * System will verify ID card against approved templates
       </div>
     </div>
   );
-}
+};
 
 export default IDScan;

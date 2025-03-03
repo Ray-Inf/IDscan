@@ -1,135 +1,189 @@
-import React, { useState } from 'react';
-import WebCam from './WebCam'; // Import your existing WebCam component
+import React, { useState } from "react";
+import WebCam from "./WebCam";
+import axios from "axios";
 
 const Register = () => {
-    const [name, setName] = useState(null);
-    const [capturedImage, setCapturedImage] = useState(null); // Store the captured image
-    const [resultStatus, setResultStatus] = useState(null);
-    const [isImageCaptured, setIsImageCaptured] = useState(false); // To track if the image has been captured
+  const [name, setName] = useState("");
+  const [email, setEmail] = useState("");
+  const [role, setRole] = useState("");
+  const [department, setDepartment] = useState("");
+  const [templateId, setTemplateId] = useState("");
+  const [cardId, setCardId] = useState("");
+  const [admissionYear, setAdmissionYear] = useState("");
+  const [division, setDivision] = useState("");
+  const [idCardImage, setIdCardImage] = useState(null);
+  const [faceImage, setFaceImage] = useState(null);
+  const [successMessage, setSuccessMessage] = useState(null);
+  const [errorMessage, setErrorMessage] = useState(null);
 
-    const register = () => {
-        if (!name || !capturedImage) {
-            alert("Please enter your name and capture an image.");
-            return;
-        }
+  const handleRegister = async () => {
+    if (!name || !templateId || !cardId || !idCardImage || !faceImage || !admissionYear) {
+      setErrorMessage("Please fill in all required fields and capture images.");
+      return;
+    }
 
-        // Create FormData and append the name and image
-        const formData = new FormData();
-        formData.append('name', name);
+    // Validate templateId as an integer
+    const parsedTemplateId = parseInt(templateId, 10);
+    if (isNaN(parsedTemplateId)) {
+      setErrorMessage("Template ID must be a valid number.");
+      return;
+    }
 
-        // Convert the base64 image to a Blob
-        const blob = convertBase64ToBlob(capturedImage);
+    // Validate admissionYear as a valid year
+    const parsedAdmissionYear = parseInt(admissionYear, 10);
+    if (isNaN(parsedAdmissionYear) || admissionYear.length !== 4) {
+      setErrorMessage("Admission Year must be a valid 4-digit year.");
+      return;
+    }
 
-        // Append the image Blob to FormData
-        formData.append('image', blob, 'image.jpg');
+    const formData = new FormData();
+    formData.append("name", name);
+    formData.append("email", email);
+    formData.append("role", role);
+    formData.append("department", department);
+    formData.append("template_id", parsedTemplateId);
+    formData.append("card_id", cardId);
+    formData.append("admission_year", admissionYear);
+    formData.append("division", division);
+    formData.append("id_card", dataURLtoBlob(idCardImage));
+    formData.append("face_image", dataURLtoBlob(faceImage));
 
-        fetch('http://127.0.0.1:5000/register', {
-            method: 'POST',
-            body: formData,
-        })
-            .then((res) => res.json())
-            .then((res) => {
-                setResultStatus(res.status);
-            })
-            .catch((err) => console.error("Error:", err));
-    };
+    try {
+      const response = await axios.post("http://127.0.0.1:5000/user/register-user", formData, {
+        headers: { "Content-Type": "multipart/form-data" },
+      });
 
-    // Convert base64 to Blob
-    const convertBase64ToBlob = (base64) => {
-        const byteCharacters = atob(base64.split(',')[1]);
-        const byteArrays = [];
-        for (let offset = 0; offset < byteCharacters.length; offset++) {
-            const byteArray = byteCharacters.charCodeAt(offset);
-            byteArrays.push(byteArray);
-        }
-        const byteArray = new Uint8Array(byteArrays);
-        return new Blob([byteArray], { type: 'image/jpeg' });
-    };
+      if (response.data.message) {
+        setSuccessMessage(response.data.message);
+        setErrorMessage(null);
+        // Clear form fields after successful registration
+        setName("");
+        setEmail("");
+        setRole("");
+        setDepartment("");
+        setTemplateId("");
+        setCardId("");
+        setAdmissionYear("");
+        setDivision("");
+        setIdCardImage(null);
+        setFaceImage(null);
+      }
+    } catch (error) {
+      console.error("Error during registration:", error);
+      setErrorMessage(error.response?.data?.error || "An error occurred while registering. Please try again.");
+    }
+  };
 
-    const handleCapture = (imageData) => {
-        setCapturedImage(imageData); // Set the captured image data
-        setIsImageCaptured(true); // Mark that an image has been captured
-    };
+  const dataURLtoBlob = (dataURL) => {
+    const byteString = atob(dataURL.split(",")[1]);
+    const mimeString = dataURL.split(",")[0].split(":")[1].split(";")[0];
+    const arrayBuffer = new ArrayBuffer(byteString.length);
+    const uint8Array = new Uint8Array(arrayBuffer);
+    for (let i = 0; i < byteString.length; i++) {
+      uint8Array[i] = byteString.charCodeAt(i);
+    }
+    return new Blob([arrayBuffer], { type: mimeString });
+  };
 
-    const handleRetake = () => {
-        setCapturedImage(null); // Reset the captured image
-        setIsImageCaptured(false); // Mark that the image has been retaken
-    };
-
-    return (
-        <div className="min-h-screen bg-gray-100 flex items-center justify-center p-6">
-            <div className="max-w-md w-full bg-white p-8 rounded-lg shadow-xl">
-                {resultStatus !== 'Done' ? (
-                    <div>
-                        <h2 className="text-3xl font-semibold text-center text-indigo-600 mb-6">
-                            Register Your Account
-                        </h2>
-                        <div className="mb-4">
-                            <label htmlFor="name" className="block text-gray-700 text-sm font-medium mb-2">
-                                Enter Your Name
-                            </label>
-                            <input
-                                type="text"
-                                name="name"
-                                id="name"
-                                className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500"
-                                onChange={(e) => setName(e.target.value)}
-                            />
-                        </div>
-
-                        {/* Conditionally show WebCam or image preview */}
-                        <div className="mb-4">
-                            <label className="block text-gray-700 text-sm font-medium mb-2">Capture Your Image</label>
-                            {!isImageCaptured ? (
-                                <WebCam onCapture={handleCapture} />
-                            ) : (
-                                <div className="text-center">
-                                    <h3 className="text-lg font-semibold text-indigo-600 mb-2">Preview</h3>
-                                    <img
-                                        src={capturedImage}
-                                        alt="Captured"
-                                        className="w-full h-auto mb-4 rounded-md shadow-lg"
-                                    />
-                                    <button
-                                        onClick={handleRetake}
-                                        className="py-2 px-4 bg-red-600 text-white font-semibold rounded-lg hover:bg-red-700 focus:outline-none focus:ring-2 focus:ring-red-500"
-                                    >
-                                        Retake Image
-                                    </button>
-                                </div>
-                            )}
-                        </div>
-
-                        <div className="text-center">
-                            <button
-                                onClick={register}
-                                className="w-full py-2 px-4 bg-indigo-600 text-white font-semibold rounded-lg hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-indigo-500"
-                            >
-                                Register
-                            </button>
-                        </div>
-                    </div>
-                ) : (
-                    <div className="text-center">
-                        <h2 className="text-2xl font-semibold text-indigo-600 mb-4">
-                            Hello {name}!
-                        </h2>
-                        <p className="text-gray-700 mb-4">
-                            Your registration was successfully completed. You can now proceed to login.
-                        </p>
-                        <div>
-                            <button
-                                onClick={() => setResultStatus(null)}
-                                className="w-full py-2 px-4 bg-indigo-600 text-white font-semibold rounded-lg hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-indigo-500"
-                            >
-                                Back to Register
-                            </button>
-                        </div>
-                    </div>
-                )}
-            </div>
-        </div>
-    );
+  return (
+    <div className="p-4">
+      <h2 className="text-xl font-bold mb-4">Register</h2>
+      <input
+        type="text"
+        placeholder="Enter your name *"
+        value={name}
+        onChange={(e) => setName(e.target.value)}
+        className="border p-2 mb-4 w-full"
+        required
+      />
+      <input
+        type="email"
+        placeholder="Enter your email"
+        value={email}
+        onChange={(e) => setEmail(e.target.value)}
+        className="border p-2 mb-4 w-full"
+      />
+      <input
+        type="text"
+        placeholder="Enter your role"
+        value={role}
+        onChange={(e) => setRole(e.target.value)}
+        className="border p-2 mb-4 w-full"
+      />
+      <input
+        type="text"
+        placeholder="Enter your department"
+        value={department}
+        onChange={(e) => setDepartment(e.target.value)}
+        className="border p-2 mb-4 w-full"
+      />
+      <input
+        type="number"
+        placeholder="Enter Template ID *"
+        value={templateId}
+        onChange={(e) => setTemplateId(e.target.value)}
+        className="border p-2 mb-4 w-full"
+        required
+      />
+      <input
+        type="text"
+        placeholder="Enter Registration Number (Card ID) *"
+        value={cardId}
+        onChange={(e) => setCardId(e.target.value)}
+        className="border p-2 mb-4 w-full"
+        required
+      />
+      <input
+        type="text"
+        placeholder="Enter Admission Year (YYYY) *"
+        value={admissionYear}
+        onChange={(e) => setAdmissionYear(e.target.value)}
+        className="border p-2 mb-4 w-full"
+        maxLength={4}
+        required
+      />
+      <input
+        type="text"
+        placeholder="Enter Division (if applicable)"
+        value={division}
+        onChange={(e) => setDivision(e.target.value)}
+        className="border p-2 mb-4 w-full"
+      />
+      <div className="mb-4">
+        <h3 className="font-bold">ID Card Image *</h3>
+        {!idCardImage ? (
+          <WebCam onCapture={(imageData) => setIdCardImage(imageData)} />
+        ) : (
+          <div>
+            <img src={idCardImage} alt="ID Card" className="w-64 h-64 object-cover" />
+            <button onClick={() => setIdCardImage(null)} className="mt-2 bg-red-500 text-white px-4 py-2 rounded">
+              Retake Image
+            </button>
+          </div>
+        )}
+      </div>
+      <div className="mb-4">
+        <h3 className="font-bold">Face Image *</h3>
+        {!faceImage ? (
+          <WebCam onCapture={(imageData) => setFaceImage(imageData)} />
+        ) : (
+          <div>
+            <img src={faceImage} alt="Face" className="w-64 h-64 object-cover" />
+            <button onClick={() => setFaceImage(null)} className="mt-2 bg-red-500 text-white px-4 py-2 rounded">
+              Retake Image
+            </button>
+          </div>
+        )}
+      </div>
+      {idCardImage && faceImage && (
+        <button onClick={handleRegister} className="bg-blue-500 text-white px-4 py-2 rounded">
+          Register
+        </button>
+      )}
+      {successMessage && <p className="text-green-500 mt-2">{successMessage}</p>}
+      {errorMessage && <p className="text-red-500 mt-2">{errorMessage}</p>}
+    </div>
+  );
 };
 
 export default Register;
