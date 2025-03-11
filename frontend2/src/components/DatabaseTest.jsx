@@ -14,9 +14,19 @@ function DatabaseTest({ studentId }) {
       setLocalStudentDetails(JSON.parse(storedDetails));
     } else {
       // Fetch student data from the server as a fallback
-      axios.get('http://localhost:3001/api/users')
-        .then(response => {
+      axios.get(`http://localhost:3001/api/student/${studentId}`)
+      .then(response => {
           setStudents(response.data);
+
+          // Store first student's data with timestamp if found
+          if (response.data.length > 0) {
+            const entryWithTime = {
+              ...response.data[0],
+              time_of_entry: new Date().toLocaleString(), // Store timestamp
+            };
+            localStorage.setItem("studentDetails", JSON.stringify(entryWithTime));
+            setLocalStudentDetails(entryWithTime);
+          }
         })
         .catch(err => {
           console.error('Error fetching data:', err);
@@ -69,6 +79,7 @@ function DatabaseTest({ studentId }) {
             <th className="border px-4 py-2">Name</th>
             <th className="border px-4 py-2">Registration Number</th>
             <th className="border px-4 py-2">Branch</th>
+            <th className="border px-4 py-2">Time of Entry</th>
           </tr>
         </thead>
         <tbody>
@@ -78,6 +89,7 @@ function DatabaseTest({ studentId }) {
               <td className="border px-4 py-2">{localStudentDetails.name_of_student}</td>
               <td className="border px-4 py-2">{localStudentDetails.student_registration_number}</td>
               <td className="border px-4 py-2">{localStudentDetails.branch}</td>
+              <td className="border px-4 py-2">{localStudentDetails.time_of_entry}</td>
             </tr>
           ) : students.length > 0 ? (
             students.map(student => (
@@ -86,11 +98,12 @@ function DatabaseTest({ studentId }) {
                 <td className="border px-4 py-2">{student.name_of_student}</td>
                 <td className="border px-4 py-2">{student.student_registration_number}</td>
                 <td className="border px-4 py-2">{student.branch}</td>
+                <td className="border px-4 py-2">N/A</td>
               </tr>
             ))
           ) : (
             <tr>
-              <td colSpan="4" className="text-center py-4">No student details available.</td>
+              <td colSpan="5" className="text-center py-4">No student details available.</td>
             </tr>
           )}
         </tbody>

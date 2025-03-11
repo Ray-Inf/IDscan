@@ -6,6 +6,7 @@ import './index.css';
 import IDScan from './components/IDScan';
 import IDVERIFY from './components/IDVERIFY';
 import DatabaseTest from './components/DatabaseTest'; // Importing DatabaseTest component
+import ProtectedRoute from './components/ProtectedRoute'; // Import ProtectedRoute
 
 
 export default function App() {
@@ -47,9 +48,10 @@ export default function App() {
           <Routes>
             <Route path="/" element={<Login />} />
             <Route path="/register" element={<Register />} />
-            <Route path="/idScan" element={<IDScan/>}/>
-            <Route path="/databaseTest" element={<DatabaseTest />} /> {/* Route for DatabaseTest */}
-            <Route path="/IDVERIFY" element={<IDVERIFY/>} />
+            {/* Protect these routes */}
+            <Route path="/idScan" element={<ProtectedRoute><IDScan/></ProtectedRoute>} />
+            <Route path="/databaseTest" element={<ProtectedRoute><DatabaseTest/></ProtectedRoute>} />
+            <Route path="/IDVERIFY" element={<ProtectedRoute><IDVERIFY/></ProtectedRoute>} />
           </Routes>
         </div>
         <footer className="bg-gray-800 text-white py-4 mt-8">
