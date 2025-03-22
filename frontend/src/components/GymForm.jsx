@@ -1,0 +1,91 @@
+import React, { useState } from "react";
+import { toast } from "react-toastify";
+import axios from "axios";
+import InputField from "./InputField";
+import { dataURLtoBlob } from "../../dataURLtoBlob";
+import WebCam from "./WebCam";
+
+const GymForm = () => {
+  const [idCardImage, setIdCardImage] = useState(null);
+  const [faceImage, setFaceImage] = useState(null);
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState("");
+
+  const handleSubmit = async (e) => {
+    e.preventDefault();
+    setLoading(true);
+    setError("");
+
+    try {
+      const formData = new FormData(e.target);
+      formData.append("id_card", dataURLtoBlob(idCardImage));
+      formData.append("face_image", dataURLtoBlob(faceImage));
+
+      const response = await axios.post("http://127.0.0.1:5000/api/register-gym-master", formData, {
+        headers: { "Content-Type": "multipart/form-data" },
+      });
+
+      if (response.data.message) {
+        toast.success("Gym Master registered successfully!");
+      }
+    } catch (err) {
+      setError(err.response?.data?.error || err.message || "An error occurred while submitting the form");
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  return (
+    <form onSubmit={handleSubmit} className="flex flex-col gap-8">
+      <h1 className="text-xl font-semibold">Gym Master Registration</h1>
+      {error && <div className="text-red-500 text-sm">{error}</div>}
+
+      <div className="flex justify-between flex-wrap gap-4">
+        <InputField label="Full Name" name="name" inputProps={{ required: true }} />
+        <InputField label="Staff ID" name="staffId" inputProps={{ required: true }} />
+        <InputField label="Email" name="email" type="email" inputProps={{ required: true }} />
+        <InputField label="Phone" name="phone" inputProps={{ required: true }} />
+        <InputField label="Specialization" name="specialization" inputProps={{ required: true }} />
+        <InputField label="Blood Type" name="bloodType" />
+        <InputField label="Date of Birth" name="birthday" type="date" inputProps={{ required: true }} />
+        <InputField label="Address" name="address" inputProps={{ required: true }} />
+      </div>
+
+      {/* ID Card Image */}
+      <div className="mb-4">
+        <h3 className="font-bold">ID Card Image *</h3>
+        {!idCardImage ? (
+          <WebCam onCapture={(imageData) => setIdCardImage(imageData)} />
+        ) : (
+          <div>
+            <img src={idCardImage} alt="ID Card" className="w-64 h-64 object-cover" />
+            <button onClick={() => setIdCardImage(null)} className="mt-2 bg-red-500 text-white px-4 py-2 rounded">
+              Retake Image
+            </button>
+          </div>
+        )}
+      </div>
+
+      {/* Face Image */}
+      <div className="mb-4">
+        <h3 className="font-bold">Face Image *</h3>
+        {!faceImage ? (
+          <WebCam onCapture={(imageData) => setFaceImage(imageData)} />
+        ) : (
+          <div>
+            <img src={faceImage} alt="Face" className="w-64 h-64 object-cover" />
+            <button onClick={() => setFaceImage(null)} className="mt-2 bg-red-500 text-white px-4 py-2 rounded">
+              Retake Image
+            </button>
+          </div>
+        )}
+      </div>
+
+      <button type="submit" className="bg-blue-400 text-white p-2 rounded-md" disabled={loading}>
+        {loading ? "Processing..." : "Register"}
+      </button>
+    </form>
+  );
+};
+
+export default GymForm;

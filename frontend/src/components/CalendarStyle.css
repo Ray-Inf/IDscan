@@ -1,0 +1,39 @@
+.calendar-container {
+  background-color: #f9fafb;
+  padding: 2rem;
+  height: 100vh;
+}
+
+.custom-big-calendar {
+  height: 90vh !important;
+  margin: auto;
+}
+
+.event-block {
+  transition: all 0.3s ease;
+}
+
+.today-highlight {
+  background-color: #eef2ff;
+}
+
+.time-slot-wrapper {
+  padding: 0.5rem;
+}
+
+.react-big-calendar .rbc-header {
+  background-color: #f3f4f6;
+  font-weight: bold;
+  text-transform: uppercase;
+  font-size: 0.8rem;
+}
+
+.react-big-calendar .rbc-day-bg {
+  border: 1px solid #e5e7eb;
+}
+
+.react-big-calendar .rbc-event {
+  border-radius: 0.25rem;
+  padding: 0.25rem 0.5rem;
+  font-size: 0.8rem;
+}
