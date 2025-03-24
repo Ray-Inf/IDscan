@@ -5,13 +5,13 @@ from dotenv import load_dotenv
 load_dotenv()
 
 # Database configuration
-DB_CONFIG = {
-    'host': os.getenv('DB_HOST'),
-    'user': os.getenv('DB_USER'),
-    'password': os.getenv('DB_PASSWORD'),  # Sensitive information moved to .env
+# DB_CONFIG = {
+#     'host': os.getenv('DB_HOST'),
+#     'user': os.getenv('DB_USER'),
+#     'password': os.getenv('DB_PASSWORD'),  # Sensitive information moved to .env
 
-    'database': os.getenv('DB_NAME')
-}
+#     'database': os.getenv('DB_NAME')
+# }
 
 # API URLs and other settings
 API_URL = "http://127.0.0.1:5000"
@@ -22,9 +22,7 @@ INPUT_SHAPE = (224, 224, 3)
 IMAGE_DIRS = {
     'templates': 'images/templates',
     'users': 'images/users',
-    'temp': 'temp',
-     "id_cards": "uploads/id_cards",
-    "face_images": "uploads/face_images"
+    'temp': 'temp'
 }
 # Facilities configuration
 FACILITIES = {
@@ -40,5 +38,3 @@ FACILITY_DIRS = {
     'cafeteria': 'logs/cafeteria',
     'class': 'logs/class'
 }
-for directory in IMAGE_DIRS.values():
-    os.makedirs(directory, exist_ok=True) 

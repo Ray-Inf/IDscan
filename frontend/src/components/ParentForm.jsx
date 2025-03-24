@@ -2,10 +2,11 @@ import React, { useState } from "react";
 import { toast } from "react-toastify";
 import axios from "axios";
 import InputField from "./InputField";
-
-import WebCam from "./WebCam";
 import { dataURLtoBlob } from "../../dataURLtoBlob";
-const LibrarianForm = () => {
+import WebCam from "./WebCam";
+
+
+const ParentForm = () => {
   const [idCardImage, setIdCardImage] = useState(null);
   const [faceImage, setFaceImage] = useState(null);
   const [loading, setLoading] = useState(false);
@@ -23,7 +24,7 @@ const LibrarianForm = () => {
       if (idCardImage) {
         const idCardResponse = await axios.post("http://127.0.0.1:5000/api/upload-image", {
           file: dataURLtoBlob(idCardImage),
-          user_type: "librarian",
+          user_type: "parent",
           card_id: formData.get("cardId"),
           id_card: true,
         }, {
@@ -36,7 +37,7 @@ const LibrarianForm = () => {
       if (faceImage) {
         const faceImageResponse = await axios.post("http://127.0.0.1:5000/api/upload-image", {
           file: dataURLtoBlob(faceImage),
-          user_type: "librarian",
+          user_type: "parent",
           card_id: formData.get("cardId"),
           face_image: true,
         }, {
@@ -46,12 +47,12 @@ const LibrarianForm = () => {
       }
   
       // Submit the form data
-      const response = await axios.post("http://127.0.0.1:5000/api/librarians", formData, {
+      const response = await axios.post("http://127.0.0.1:5000/api/parents", formData, {
         headers: { "Content-Type": "multipart/form-data" },
       });
   
       if (response.data) {
-        toast.success("Librarian registered successfully!");
+        toast.success("Parent registered successfully!");
       }
     } catch (err) {
       setError(err.response?.data?.error || err.message || "An error occurred while submitting the form");
@@ -62,18 +63,16 @@ const LibrarianForm = () => {
 
   return (
     <form onSubmit={handleSubmit} className="flex flex-col gap-8">
-      <h1 className="text-xl font-semibold">Librarian Registration</h1>
+      <h1 className="text-xl font-semibold">Parent Registration</h1>
       {error && <div className="text-red-500 text-sm">{error}</div>}
 
       <div className="flex justify-between flex-wrap gap-4">
+        <InputField label="Username" name="username" inputProps={{ required: true }} />
         <InputField label="Card ID" name="cardId" inputProps={{ required: true }} />
-        <InputField label="Staff ID" name="staffId" inputProps={{ required: true }} />
         <InputField label="Full Name" name="name" inputProps={{ required: true }} />
+        <InputField label="Surname" name="surname" inputProps={{ required: true }} />
         <InputField label="Email" name="email" type="email" inputProps={{ required: true }} />
         <InputField label="Phone" name="phone" inputProps={{ required: true }} />
-        <InputField label="Library Section" name="librarySection" inputProps={{ required: true }} />
-        <InputField label="Blood Type" name="bloodType" />
-        <InputField label="Birthday" name="birthday" type="date" inputProps={{ required: true }} />
         <InputField label="Address" name="address" inputProps={{ required: true }} />
         <InputField label="Template ID" name="templateId" inputProps={{ required: true }} />
       </div>
@@ -115,4 +114,4 @@ const LibrarianForm = () => {
   );
 };
 
-export default LibrarianForm;
+export default ParentForm;

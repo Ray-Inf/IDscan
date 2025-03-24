@@ -1,51 +1,55 @@
-
 import React, { useState } from "react";
-import { useNavigate } from "react-router-dom"; // ✅ Import useNavigate
+import { useNavigate } from "react-router-dom";
 import WebCam from "./WebCam";
 import IDScan from "./IDScan";
 import axios from "axios";
 
 const Login = ({ setIsAuthenticated, setUserRole }) => {
-  const navigate = useNavigate(); // ✅ Initialize navigate
-  const [step, setStep] = useState("id-scan"); 
+  const navigate = useNavigate();
+  const [step, setStep] = useState("id-scan");
   const [capturedImage, setCapturedImage] = useState(null);
   const [userId, setUserId] = useState("");
   const [userInfo, setUserInfo] = useState(null);
   const [errorMessage, setErrorMessage] = useState("");
   const [loading, setLoading] = useState(false);
 
-  // Handle ID scan completion
   const handleIDExtracted = (extractedUserId, extractedInfo) => {
     setUserId(extractedUserId);
     setUserInfo(extractedInfo);
     setStep("face-capture");
   };
 
-  // Handle login verification with face
   const handleLogin = async () => {
     if (!capturedImage) {
       setErrorMessage("Please capture an image using the webcam.");
       return;
     }
-
+  
     if (!userId) {
       setErrorMessage("User ID not found. Please scan your ID card again.");
       setStep("id-scan");
       return;
     }
-
+  
     setLoading(true);
     setErrorMessage("");
-
+  
     try {
       const formData = new FormData();
-      formData.append("live_image", dataURLtoBlob(capturedImage));
-      formData.append("user_id", userId);
-
-      const response = await axios.post("http://127.0.0.1:5000/api/login", formData, {
+      const imageBlob = dataURLtoBlob(capturedImage);
+  
+      formData.append("live_image", imageBlob, "captured_image.jpg"); // Add a filename
+      formData.append("user_id", userId); // Change from card_id to user_id
+  
+      // Debugging: Log FormData before sending
+      for (let [key, value] of formData.entries()) {
+        console.log(key, value);
+      }
+  
+      const response = await axios.post("http://localhost:5000/api/login", formData, {
         headers: { "Content-Type": "multipart/form-data" },
       });
-
+  
       if (response.data.match) {
         localStorage.setItem(
           "user",
@@ -55,11 +59,10 @@ const Login = ({ setIsAuthenticated, setUserRole }) => {
             role: response.data.role || "user",
           })
         );
-
+  
         setIsAuthenticated(true);
         setUserRole(response.data.role || "user");
-
-        // ✅ Redirect to dashboard
+  
         navigate("/dashboard");
       } else {
         setErrorMessage(response.data.message || "Face verification failed. Please try again.");
@@ -78,15 +81,11 @@ const Login = ({ setIsAuthenticated, setUserRole }) => {
     } finally {
       setLoading(false);
     }
-  };
-
-  // Handle ID scan errors
-  const handleScanError = (error) => {
+  }; const handleScanError = (error) => {
     setErrorMessage(error);
     setStep("id-scan");
   };
 
-  // Converts a base64 Data URL to a Blob object for file upload
   const dataURLtoBlob = (dataURL) => {
     const byteString = atob(dataURL.split(",")[1]);
     const mimeString = dataURL.split(",")[0].split(":")[1].split(";")[0];
@@ -103,7 +102,6 @@ const Login = ({ setIsAuthenticated, setUserRole }) => {
       <div className="p-6 max-w-md mx-auto bg-white shadow-md rounded-md">
         <h2 className="text-2xl font-bold mb-4 text-center">Login</h2>
         
-        {/* Step 1: ID Scan */}
         {step === "id-scan" && (
           <IDScan 
             onIDExtracted={handleIDExtracted}
@@ -111,7 +109,6 @@ const Login = ({ setIsAuthenticated, setUserRole }) => {
           />
         )}
 
-        {/* Step 2: Face Capture */}
         {step === "face-capture" && (
           <>
             {userInfo && (
@@ -140,7 +137,6 @@ const Login = ({ setIsAuthenticated, setUserRole }) => {
               </div>
             )}
 
-            {/* Back to ID Scan Button */}
             <button
               onClick={() => {
                 setStep("id-scan");
@@ -154,7 +150,6 @@ const Login = ({ setIsAuthenticated, setUserRole }) => {
               Back to ID Scan
             </button>
 
-            {/* Authenticate Button */}
             {capturedImage && (
               <button
                 onClick={handleLogin}
@@ -167,7 +162,6 @@ const Login = ({ setIsAuthenticated, setUserRole }) => {
           </>
         )}
 
-        {/* Error Message */}
         {errorMessage && (
           <div className="mt-4 p-3 bg-red-50 border border-red-200 rounded-md text-red-600 text-center">
             {errorMessage}

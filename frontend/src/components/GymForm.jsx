@@ -5,6 +5,7 @@ import InputField from "./InputField";
 import { dataURLtoBlob } from "../../dataURLtoBlob";
 import WebCam from "./WebCam";
 
+
 const GymForm = () => {
   const [idCardImage, setIdCardImage] = useState(null);
   const [faceImage, setFaceImage] = useState(null);
@@ -15,17 +16,42 @@ const GymForm = () => {
     e.preventDefault();
     setLoading(true);
     setError("");
-
+  
     try {
       const formData = new FormData(e.target);
-      formData.append("id_card", dataURLtoBlob(idCardImage));
-      formData.append("face_image", dataURLtoBlob(faceImage));
-
-      const response = await axios.post("http://127.0.0.1:5000/api/register-gym-master", formData, {
+  
+      // Upload new ID Card Image if provided
+      if (idCardImage) {
+        const idCardResponse = await axios.post("http://127.0.0.1:5000/api/upload-image", {
+          file: dataURLtoBlob(idCardImage),
+          user_type: "gym-master",
+          card_id: formData.get("cardId"),
+          id_card: true,
+        }, {
+          headers: { "Content-Type": "multipart/form-data" },
+        });
+        formData.append("idCardImage", idCardResponse.data.file_path);
+      }
+  
+      // Upload new Face Image if provided
+      if (faceImage) {
+        const faceImageResponse = await axios.post("http://127.0.0.1:5000/api/upload-image", {
+          file: dataURLtoBlob(faceImage),
+          user_type: "gym-master",
+          card_id: formData.get("cardId"),
+          face_image: true,
+        }, {
+          headers: { "Content-Type": "multipart/form-data" },
+        });
+        formData.append("faceImage", faceImageResponse.data.file_path);
+      }
+  
+      // Submit the form data
+      const response = await axios.post("http://127.0.0.1:5000/api/gym-masters", formData, {
         headers: { "Content-Type": "multipart/form-data" },
       });
-
-      if (response.data.message) {
+  
+      if (response.data) {
         toast.success("Gym Master registered successfully!");
       }
     } catch (err) {
@@ -41,14 +67,16 @@ const GymForm = () => {
       {error && <div className="text-red-500 text-sm">{error}</div>}
 
       <div className="flex justify-between flex-wrap gap-4">
-        <InputField label="Full Name" name="name" inputProps={{ required: true }} />
+        <InputField label="Card ID" name="cardId" inputProps={{ required: true }} />
         <InputField label="Staff ID" name="staffId" inputProps={{ required: true }} />
+        <InputField label="Full Name" name="name" inputProps={{ required: true }} />
         <InputField label="Email" name="email" type="email" inputProps={{ required: true }} />
         <InputField label="Phone" name="phone" inputProps={{ required: true }} />
         <InputField label="Specialization" name="specialization" inputProps={{ required: true }} />
         <InputField label="Blood Type" name="bloodType" />
-        <InputField label="Date of Birth" name="birthday" type="date" inputProps={{ required: true }} />
+        <InputField label="Birthday" name="birthday" type="date" inputProps={{ required: true }} />
         <InputField label="Address" name="address" inputProps={{ required: true }} />
+        <InputField label="Template ID" name="templateId" inputProps={{ required: true }} />
       </div>
 
       {/* ID Card Image */}

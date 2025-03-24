@@ -9,26 +9,19 @@ import cv2
 import logging
 from scipy.spatial.distance import cosine
 from paddleocr import PaddleOCR
-from prisma import Prisma
-from datetime import datetime
+from prisma.client import Prisma
 
 # Set up logging
 logging.basicConfig(level=logging.DEBUG)
 logger = logging.getLogger(__name__)
 
 id_card_bp = Blueprint('id_card', __name__)
+
+# Initialize Prisma client
 prisma = Prisma()
 
 # Initialize PaddleOCR
 ocr = PaddleOCR(use_angle_cls=True, lang='en')  # Set language to English
-
-async def connect_prisma():
-    if not prisma.is_connected():
-        await prisma.connect()
-
-async def disconnect_prisma():
-    if prisma.is_connected():
-        await prisma.disconnect()
 
 @id_card_bp.route('/register-id-template', methods=['POST'])
 async def register_template():
@@ -90,36 +83,47 @@ async def register_template():
     if not os.path.exists(features_path):
         return jsonify({"error": "Template features could not be saved"}), 404
         
-    # Insert the template into the database
+    # Insert the template into the database using Prisma
     try:
         logger.debug("Inserting template into database")
-        await connect_prisma()
+        await prisma.connect()
         
         # Check if template with this name already exists
-        existing_template = await prisma.template.find_unique(where={"name": template_name})
+        existing_template = await prisma.template.find_unique(
+            where={"name": template_name}
+        )
+        
         if existing_template:
             logger.warning(f"Template with name '{template_name}' already exists")
             return jsonify({"error": f"Template with name '{template_name}' already exists"}), 400
             
         # Insert the new template
-        template = await prisma.template.create({
-            "name": template_name,
-            "organization": organization,
-            "templateClass": template_class
-        })
+        import uuid
+        template_id = str(uuid.uuid4())
+        new_template = await prisma.template.create(
+            data={
+                "id": template_id,
+                "name": template_name,
+                "organization": organization,
+                "templateClass": template_class,
+                "image_path": template_path,
+                "features_path": features_path
+            }
+        )
         
-        logger.debug(f"Template inserted successfully with ID: {template.id}")
+        logger.debug(f"Template inserted successfully with ID: {new_template.id}")
         
         return jsonify({
             "message": f"Template '{template_name}' registered successfully!",
-            "template_id": template.id
+            "template_id": new_template.id
         }), 200
         
     except Exception as e:
         logger.error(f"Database error: {str(e)}")
         return jsonify({"error": f"Database error: {str(e)}"}), 500
+        
     finally:
-        await disconnect_prisma()
+        await prisma.disconnect()
 
 @id_card_bp.route('/scan', methods=['POST'])
 async def scan_id_card():
@@ -139,8 +143,10 @@ async def scan_id_card():
         id_features = preprocess_image(temp_path)
         id_image_features = model.predict(id_features).flatten()
         
+        # Connect to the database using Prisma
+        await prisma.connect()
+        
         # Get all templates from the database
-        await connect_prisma()
         templates = await prisma.template.find_many()
         
         if not templates:
@@ -170,7 +176,7 @@ async def scan_id_card():
                     matched_template_id = template.id
         
         # Set a threshold for template matching
-        if best_similarity < 65:  # Require at least 65% similarity
+        if best_similarity < 55:  # Require at least 65% similarity
             logger.warning(f"Best template match is below threshold: {best_similarity}%")
             return jsonify({"error": "ID card type not recognized. Please use a valid ID card."}), 400
         
@@ -183,44 +189,151 @@ async def scan_id_card():
         # Extract text using PaddleOCR
         ocr_results = ocr.ocr(enhanced_image, cls=True)
         extracted_text = " ".join([line[1][0] for result in ocr_results for line in result])
-        print(f"Extracted text: {extracted_text}")
         logger.debug(f"Extracted text: {extracted_text}")
         
         # Try to extract the ID number
         card_id = extract_id_number(extracted_text)
-        print(f"Extracted ID number: {card_id}")
         logger.debug(f"Extracted ID number: {card_id}")
         
         if not card_id:
             return jsonify({"error": "Could not extract ID number from card"}), 400
         
-        # Check if the ID exists in the database
-        user = await prisma.student.find_unique(where={"cardId": card_id})
+        # Check for users with this card ID
+        # First check if it's a student
+        student = await prisma.student.find_unique(
+            where={"cardId": card_id}
+        )
         
-        if not user:
+        if student:
+            logger.debug(f"Found existing student: {student.name}, ID: {student.cardId}")
+            # Clean up the temporary file
+            os.remove(temp_path)
+            
             return jsonify({
-                "message": "New ID card detected", 
-                "card_id": card_id,
+                "message": "ID card successfully scanned and verified",
+                "user_id": student.cardId,
+                "name": student.name,
+                "role": "STUDENT",
                 "template_id": matched_template_id,
                 "template_name": best_match,
-                "new_user": True
+                "similarity": best_similarity,
+                "new_user": False
+            }), 200
+        
+        # Check if it's a teacher
+        teacher = await prisma.teacher.find_unique(
+            where={"cardId": card_id}
+        )
+        
+        if teacher:
+            logger.debug(f"Found existing teacher: {teacher.name}, ID: {teacher.cardId}")
+            # Clean up the temporary file
+            os.remove(temp_path)
+            
+            return jsonify({
+                "message": "ID card successfully scanned and verified",
+                "user_id": teacher.cardId,
+                "name": teacher.name,
+                "role": "TEACHER",
+                "template_id": matched_template_id,
+                "template_name": best_match,
+                "similarity": best_similarity,
+                "new_user": False
+            }), 200
+        
+        # Check if it's an admin
+        admin = await prisma.admin.find_unique(
+            where={"cardId": card_id}
+        )
+        
+        if admin:
+            logger.debug(f"Found existing admin: {admin.name}, ID: {admin.cardId}")
+            # Clean up the temporary file
+            os.remove(temp_path)
+            
+            return jsonify({
+                "message": "ID card successfully scanned and verified",
+                "user_id": admin.cardId,
+                "name": admin.name,
+                "role": admin.role,
+                "template_id": matched_template_id,
+                "template_name": best_match,
+                "similarity": best_similarity,
+                "new_user": False
+            }), 200
+        
+        # Check if it's a librarian
+        librarian = await prisma.librarian.find_unique(
+            where={"cardId": card_id}
+        )
+        
+        if librarian:
+            logger.debug(f"Found existing librarian: {librarian.name}, ID: {librarian.cardId}")
+            # Clean up the temporary file
+            os.remove(temp_path)
+            
+            return jsonify({
+                "message": "ID card successfully scanned and verified",
+                "user_id": librarian.cardId,
+                "name": librarian.name,
+                "role": "LIBRARIAN",
+                "template_id": matched_template_id,
+                "template_name": best_match,
+                "similarity": best_similarity,
+                "new_user": False
+            }), 200
+        
+        # Check if it's a gym master
+        gym_master = await prisma.gymMaster.find_unique(
+            where={"cardId": card_id}
+        )
+        
+        if gym_master:
+            logger.debug(f"Found existing gym master: {gym_master.name}, ID: {gym_master.cardId}")
+            # Clean up the temporary file
+            os.remove(temp_path)
+            
+            return jsonify({
+                "message": "ID card successfully scanned and verified",
+                "user_id": gym_master.cardId,
+                "name": gym_master.name,
+                "role": "GYM_MASTER",
+                "template_id": matched_template_id,
+                "template_name": best_match,
+                "similarity": best_similarity,
+                "new_user": False
+            }), 200
+        
+        # Check if it's a hostel warden
+        hostel_warden = await prisma.hostelWarden.find_unique(
+            where={"cardId": card_id}
+        )
+        
+        if hostel_warden:
+            logger.debug(f"Found existing hostel warden: {hostel_warden.name}, ID: {hostel_warden.cardId}")
+            # Clean up the temporary file
+            os.remove(temp_path)
+            
+            return jsonify({
+                "message": "ID card successfully scanned and verified",
+                "user_id": hostel_warden.cardId,
+                "name": hostel_warden.name,
+                "role": "HOSTEL_WARDEN",
+                "template_id": matched_template_id,
+                "template_name": best_match,
+                "similarity": best_similarity,
+                "new_user": False
             }), 200
             
-        # Return user information for existing user
-        logger.debug(f"Found existing user: {user.name}, ID: {user.id}, Role: {user.role}")
-        
-        # Clean up the temporary file
-        os.remove(temp_path)
+        # If no user found with this card ID, return as new user
+        logger.debug(f"New ID card detected: {card_id}")
         
         return jsonify({
-            "message": "ID card successfully scanned and verified",
-            "user_id": card_id,
-            "name": user.name,
-            "role": user.role,
+            "message": "New ID card detected", 
+            "card_id": card_id,
             "template_id": matched_template_id,
             "template_name": best_match,
-            "similarity": best_similarity,
-            "new_user": False
+            "new_user": True
         }), 200
         
     except Exception as e:
@@ -228,5 +341,7 @@ async def scan_id_card():
         if os.path.exists(temp_path):
             os.remove(temp_path)
         return jsonify({"error": f"Failed to process ID card: {str(e)}"}), 500
+    
     finally:
-        await disconnect_prisma()
+        await prisma.disconnect()
+

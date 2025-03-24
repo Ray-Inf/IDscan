@@ -2,7 +2,9 @@ node_modules
 # Keep environment variables out of version control
 .env
 myenv
-images
+images/
 uploads
 routes/static
 static
+temp/
+assets/

@@ -50,6 +50,7 @@ import AssignmentListPage from "./components/Dashboard/List/Assignment/Assignmen
 import AnnouncementListPage from "./components/Dashboard/List/Announcement/AnnouncementListPage";
 import EventListPage from "./components/Dashboard/List/Events/EventListPage";
 import AttendanceChartContainer from "./components/AttendanceChartContainer";
+import Dashboard from "./components/Dashboard";
 
 export default function App() {
   const [isAuthenticated, setIsAuthenticated] = useState(false);
@@ -146,9 +147,11 @@ export default function App() {
         )}
         {/* Routes */}
         <Routes>
+          <Route path="/stud" element={<StudentListPage />} />
           <Route path="/register-template" element={<RegisterIDTemplate />} />
           <Route path="register" element={<Register />} />
           <Route path="/register-admin" element={<AdminPage />} />
+          
           {/* Authentication Routes */}
           <Route path="/login" element={<Login setIsAuthenticated={setIsAuthenticated} setUserRole={setUserRole} setUserName={setUserName} setUserId={setUserId} />} />
           {/* <Route path="/register" element={<Register />} /> */}

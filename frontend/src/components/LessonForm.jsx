@@ -45,6 +45,12 @@ const LessonForm = ({ type, data, setOpen }) => {
       <div className="flex justify-between flex-wrap gap-4">
         <InputField label="Lesson Name" name="name" defaultValue={data?.name} required />
         <InputField label="Description" name="description" defaultValue={data?.description} />
+        <InputField label="Subject ID" name="subjectId" defaultValue={data?.subjectId} type="number" required />
+        <InputField label="Class ID" name="classId" defaultValue={data?.classId} type="number" required />
+        <InputField label="Teacher ID" name="teacherId" defaultValue={data?.teacherId} required />
+        <InputField label="Day" name="day" defaultValue={data?.day} required />
+        <InputField label="Start Time" name="startTime" defaultValue={data?.startTime} type="datetime-local" required />
+        <InputField label="End Time" name="endTime" defaultValue={data?.endTime} type="datetime-local" required />
       </div>
 
       <button type="submit" className="bg-blue-400 text-white p-2 rounded-md" disabled={loading}>

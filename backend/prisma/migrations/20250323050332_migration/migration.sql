@@ -1,0 +1,3 @@
+-- AlterTable
+ALTER TABLE `admin` ADD COLUMN `imagePath` VARCHAR(191) NULL,
+    ADD COLUMN `img` VARCHAR(191) NULL;

@@ -10,7 +10,7 @@ datasource db {
 // Core User Models
 
 model Admin {
-  id        String   @id
+  
   username  String   @unique
   cardId    String  @unique
   name      String
@@ -22,6 +22,10 @@ model Admin {
   gymLogs     GymLog[]     // Relation to GymLog
   hostelLogs  HostelLog[]  // Relation to HostelLog
   template   Template @relation(fields: [templateId], references: [id], onDelete: Cascade)
+  img        String?
+  imagePath  String?
+  attendanceLogs AttendanceLog[]
+  facilityLogs   FacilityAttendanceLog[]
 }
 
 model Student {
@@ -58,6 +62,8 @@ model Student {
   attendances     Attendance[]
   classAttendance ClassAttendance[]
   results         Result[]
+  attendanceLogs AttendanceLog[]
+
   
   // Facility usage logs
   gymLogs      GymLog[]
@@ -94,6 +100,8 @@ model Teacher {
   teacherClasses Class_[] @relation("TeacherClasses")
   templateId String
   template   Template @relation(fields: [templateId], references: [id], onDelete: Cascade)
+  attendanceLogs AttendanceLog[]
+  facilityLogs   FacilityAttendanceLog[]
 }
 
 model Parent {
@@ -172,6 +180,8 @@ model Template {
   organization  String
   templateClass String
   createdAt     DateTime @default(now())
+  image_path    String?
+  features_path String?
 
   // Add relations to other models
   admins       Admin[]
@@ -211,16 +221,7 @@ model ClassAttendance {
 
 // Facility Access Models
 
-model FacilityAttendanceLog {
-  id         String      @id
-  cardId     String @unique
-  facilityId String
-  loginTime  DateTime
-  logoutTime DateTime?
 
-  // Relationships
-  student Student @relation(fields: [cardId], references: [cardId])
-}
 
 model LibraryLog {
   id         Int      @id @default(autoincrement())
@@ -365,6 +366,8 @@ model Librarian {
   // Relationships
   libraryLogs   LibraryLog[]
   templateId   String
+  attendanceLogs AttendanceLog[]
+  facilityLogs   FacilityAttendanceLog[]
   template     Template   @relation(fields: [templateId], references: [id], onDelete: Cascade)
 }
 
@@ -386,6 +389,8 @@ model GymMaster {
   gymLogs       GymLog[]
   templateId   String
   template     Template   @relation(fields: [templateId], references: [id], onDelete: Cascade)
+  attendanceLogs AttendanceLog[]
+  facilityLogs   FacilityAttendanceLog[]
 }
 
 model HostelWarden {
@@ -405,7 +410,42 @@ model HostelWarden {
   // Relationships
   hostelLogs    HostelLog[]
   templateId   String
+  attendanceLogs AttendanceLog[]
+  facilityLogs   FacilityAttendanceLog[]
   template     Template   @relation(fields: [templateId], references: [id], onDelete: Cascade)
+}
+model AttendanceLog {
+  id         String      @id @default(cuid())
+  cardId     String      // Reference to the cardId of the role-specific model
+  loginTime  DateTime
+  logoutTime DateTime?
+  status     String      @default("PRESENT") // PRESENT, ABSENT, LATE, etc.
+  createdAt  DateTime    @default(now())
+
+  // Relationships to all role models
+  student      Student?      @relation(fields: [cardId], references: [cardId], map: "attendance_log_student_fkey")
+  teacher      Teacher?      @relation(fields: [cardId], references: [cardId], map: "attendance_log_teacher_fkey")
+  admin        Admin?        @relation(fields: [cardId], references: [cardId], map: "attendance_log_admin_fkey")
+  librarian    Librarian?    @relation(fields: [cardId], references: [cardId], map: "attendance_log_librarian_fkey")
+  gymMaster    GymMaster?    @relation(fields: [cardId], references: [cardId], map: "attendance_log_gym_master_fkey")
+  hostelWarden HostelWarden? @relation(fields: [cardId], references: [cardId], map: "attendance_log_hostel_warden_fkey")
+}
+model FacilityAttendanceLog {
+  id         String      @id @default(cuid())
+  cardId     String      // Reference to the cardId of the role-specific model
+  facilityId String
+  loginTime  DateTime
+  logoutTime DateTime?
+  status     String      @default("PRESENT")
+  createdAt  DateTime    @default(now())
+
+  // Relationships to all role models
+  student      Student?      @relation(fields: [cardId], references: [cardId], map: "facility_attendance_log_student_fkey")
+  teacher      Teacher?      @relation(fields: [cardId], references: [cardId], map: "facility_attendance_log_teacher_fkey")
+  admin        Admin?        @relation(fields: [cardId], references: [cardId], map: "facility_attendance_log_admin_fkey")
+  librarian    Librarian?    @relation(fields: [cardId], references: [cardId], map: "facility_attendance_log_librarian_fkey")
+  gymMaster    GymMaster?    @relation(fields: [cardId], references: [cardId], map: "facility_attendance_log_gym_master_fkey")
+  hostelWarden HostelWarden? @relation(fields: [cardId], references: [cardId], map: "facility_attendance_log_hostel_warden_fkey")
 }
 
 // Enumerations

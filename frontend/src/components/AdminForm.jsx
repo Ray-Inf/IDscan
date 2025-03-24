@@ -15,17 +15,42 @@ const AdminForm = () => {
     e.preventDefault();
     setLoading(true);
     setError("");
-
+  
     try {
       const formData = new FormData(e.target);
-      formData.append("id_card", dataURLtoBlob(idCardImage));
-      formData.append("face_image", dataURLtoBlob(faceImage));
-
-      const response = await axios.post("http://127.0.0.1:5000/api/register-admin", formData, {
+  
+      // Upload new ID Card Image if provided
+      if (idCardImage) {
+        const idCardResponse = await axios.post("http://127.0.0.1:5000/api/upload-image", {
+          file: dataURLtoBlob(idCardImage),
+          user_type: "admin",
+          card_id: formData.get("cardId"),
+          id_card: true,
+        }, {
+          headers: { "Content-Type": "multipart/form-data" },
+        });
+        formData.append("idCardImage", idCardResponse.data.file_path);
+      }
+  
+      // Upload new Face Image if provided
+      if (faceImage) {
+        const faceImageResponse = await axios.post("http://127.0.0.1:5000/api/upload-image", {
+          file: dataURLtoBlob(faceImage),
+          user_type: "admin",
+          card_id: formData.get("cardId"),
+          face_image: true,
+        }, {
+          headers: { "Content-Type": "multipart/form-data" },
+        });
+        formData.append("faceImage", faceImageResponse.data.file_path);
+      }
+  
+      // Submit the form data
+      const response = await axios.post("http://127.0.0.1:5000/api/admins", formData, {
         headers: { "Content-Type": "multipart/form-data" },
       });
-
-      if (response.data.message) {
+  
+      if (response.data) {
         toast.success("Admin registered successfully!");
       }
     } catch (err) {
@@ -34,20 +59,18 @@ const AdminForm = () => {
       setLoading(false);
     }
   };
-
   return (
     <form onSubmit={handleSubmit} className="flex flex-col gap-8">
       <h1 className="text-xl font-semibold">Admin Registration</h1>
       {error && <div className="text-red-500 text-sm">{error}</div>}
 
       <div className="flex justify-between flex-wrap gap-4">
+        <InputField label="Username" name="username" inputProps={{ required: true }} />
+        <InputField label="Card ID" name="cardId" inputProps={{ required: true }} />
         <InputField label="Full Name" name="name" inputProps={{ required: true }} />
-        <InputField label="Admin ID" name="adminId" inputProps={{ required: true }} />
         <InputField label="Email" name="email" type="email" inputProps={{ required: true }} />
-        <InputField label="Phone" name="phone" inputProps={{ required: true }} />
-        <InputField label="Blood Type" name="bloodType" />
-        <InputField label="Date of Birth" name="birthday" type="date" inputProps={{ required: true }} />
-        <InputField label="Address" name="address" inputProps={{ required: true }} />
+        <InputField label="Role" name="role" inputProps={{ required: true }} />
+        <InputField label="Template ID" name="templateId" inputProps={{ required: true }} />
       </div>
 
       {/* ID Card Image */}
